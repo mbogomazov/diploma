@@ -1,0 +1,23 @@
+<nb-card class="container">
+    <nb-card-header class="container-header"
+        >Files
+        <div class="icons-container">
+            <button nbButton ghost>
+                <nb-icon icon="file-add-outline"></nb-icon>
+            </button>
+            <button nbButton ghost>
+                <nb-icon icon="folder-add-outline"></nb-icon>
+            </button>
+            <!-- <button nbButton ghost>
+                <nb-icon icon="sync-outline"></nb-icon>
+            </button> -->
+        </div>
+    </nb-card-header>
+    <nb-card-body class="container-body">
+        <tree-root
+            class="file-tree"
+            (activate)="onActivate($event)"
+            [nodes]="(nodes$ | async) ?? []"
+        ></tree-root>
+    </nb-card-body>
+</nb-card>

@@ -1,0 +1,15 @@
+.container {
+    &-body {
+        padding: 0 !important;
+    }
+
+    &-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px;
+    }
+
+    height: 100%;
+    margin-bottom: 0;
+}

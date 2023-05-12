@@ -1,0 +1,28 @@
+.container,
+.editor,
+.code-editor {
+    width: 100%;
+    height: 100%;
+}
+
+.container {
+    display: flex;
+    justify-content: space-between;
+}
+
+.editor-card-container {
+    height: 100%;
+    margin-bottom: 0;
+
+    &-body {
+        padding: 0;
+    }
+}
+
+.code-editor {
+    display: block;
+
+    ::ng-deep .editor-container {
+        height: 100%;
+    }
+}
