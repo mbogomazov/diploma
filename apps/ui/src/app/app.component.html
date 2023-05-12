@@ -1,0 +1,52 @@
+<nb-layout>
+    <nb-layout-header *ngIf="(loading | async) !== true">
+        <online-editor-header></online-editor-header>
+    </nb-layout-header>
+
+    <nb-layout-column *ngIf="!!(loading | async); else app">
+        <nb-card
+            [nbSpinner]="!!(loading | async)"
+            nbSpinnerSize="tiny"
+            nbSpinnerStatus="primary"
+        >
+            <nb-card-body>Initializing WebContainers</nb-card-body>
+        </nb-card>
+    </nb-layout-column>
+</nb-layout>
+
+<ng-template #app>
+    <nb-layout-column class="container">
+        <as-split direction="vertical" [gutterSize]="2" unit="pixel">
+            <as-split-area>
+                <as-split
+                    direction="horizontal"
+                    [gutterSize]="2"
+                    unit="percent"
+                    (dragStart)="showIframeHider = true"
+                    (dragEnd)="showIframeHider = false"
+                >
+                    <as-split-area [size]="20">
+                        <online-editor-tree-view></online-editor-tree-view>
+                    </as-split-area>
+                    <as-split-area [size]="45">
+                        <online-editor-editor
+                            class="editor-container"
+                        ></online-editor-editor>
+                    </as-split-area>
+                    <as-split-area [size]="35">
+                        <online-editor-preview
+                            [showIframeHider]="showIframeHider"
+                            class="preview-container"
+                        ></online-editor-preview>
+                    </as-split-area>
+                </as-split>
+            </as-split-area>
+
+            <as-split-area [size]="240" class="terminal-split-area">
+                <online-editor-terminal
+                    class="terminal-container"
+                ></online-editor-terminal>
+            </as-split-area>
+        </as-split>
+    </nb-layout-column>
+</ng-template>

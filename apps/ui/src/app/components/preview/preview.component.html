@@ -1,0 +1,17 @@
+<nb-card class="container">
+    <nb-card-header
+        ><nb-icon icon="browser-outline"></nb-icon>Preview</nb-card-header
+    >
+    <nb-card-body class="container-body">
+        <iframe
+            #previewContent
+            class="preview"
+            allow="geolocation; microphone; camera; payment; autoplay; cross-origin-isolated"
+            frameborder="0"
+        ></iframe>
+        <div
+            [hidden]="showIframeHider === false"
+            class="hack-iframe-hider"
+        ></div>
+    </nb-card-body>
+</nb-card>

@@ -1,0 +1,26 @@
+{
+    "name": "chokidar",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "libs/chokidar/src",
+    "projectType": "library",
+    "targets": {
+        "build": {
+            "executor": "@nrwl/js:tsc",
+            "outputs": ["{options.outputPath}"],
+            "options": {
+                "outputPath": "dist/libs/chokidar",
+                "main": "libs/chokidar/src/index.ts",
+                "tsConfig": "libs/chokidar/tsconfig.lib.json",
+                "assets": ["libs/chokidar/*.md"]
+            }
+        },
+        "lint": {
+            "executor": "@nrwl/linter:eslint",
+            "outputs": ["{options.outputFile}"],
+            "options": {
+                "lintFilePatterns": ["libs/chokidar/**/*.ts"]
+            }
+        }
+    },
+    "tags": []
+}

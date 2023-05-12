@@ -1,0 +1,22 @@
+<div class="container">
+    <as-split direction="horizontal" [gutterSize]="2" unit="percent">
+        <as-split-area>
+            <nb-card class="editor-card-container">
+                <nb-card-header
+                    ><nb-icon icon="code-outline"></nb-icon
+                    >FileName</nb-card-header
+                >
+                <nb-card-body class="editor-card-container-body">
+                    <form class="editor" [formGroup]="form">
+                        <ngx-monaco-editor
+                            formControlName="editor"
+                            class="code-editor"
+                            [options]="options$ | async"
+                            (onInit)="onEditorInit($event)"
+                        ></ngx-monaco-editor>
+                    </form>
+                </nb-card-body>
+            </nb-card>
+        </as-split-area>
+    </as-split>
+</div>
