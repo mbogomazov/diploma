@@ -1,6 +1,7 @@
 .container {
     &-body {
         padding: 0 !important;
+        overflow-y: scroll;
     }
 
     &-header {

@@ -1,0 +1,13 @@
+.card {
+    margin-bottom: 0;
+    max-width: 350px;
+
+    &-body {
+        margin-bottom: 0;
+        padding: 0;
+
+        .alert {
+            margin-bottom: 0;
+        }
+    }
+}

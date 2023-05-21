@@ -1,13 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 
-import { FilesService } from './files.service';
+import { EditorFacadeService } from './editor-facade.service';
 
-describe('FilesService', () => {
-  let service: FilesService;
+describe('EditorFacadeService', () => {
+  let service: EditorFacadeService;
 
   beforeEach(() => {
     TestBed.configureTestingModule({});
-    service = TestBed.inject(FilesService);
+    service = TestBed.inject(EditorFacadeService);
   });
 
   it('should be created', () => {

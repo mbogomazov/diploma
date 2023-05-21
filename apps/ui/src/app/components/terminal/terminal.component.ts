@@ -1,17 +1,18 @@
-import { AfterViewInit, Component, ViewChild } from '@angular/core';
-import { FunctionsUsingCSI, NgTerminal } from 'ng-terminal';
+import { AfterViewInit, ChangeDetectionStrategy, Component, Input, ViewChild } from '@angular/core';
+import { NgTerminal } from 'ng-terminal';
 import { filter } from 'rxjs';
-import { WebcontainersService } from '../../services/webcontainers/webcontainers.service';
+import { TerminalService } from '../../services/terminal/terminal.service';
 
 @Component({
     selector: 'online-editor-terminal',
     templateUrl: './terminal.component.html',
     styleUrls: ['./terminal.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TerminalComponent implements AfterViewInit {
     @ViewChild('term', { static: false }) child!: NgTerminal;
 
-    constructor(private readonly webcontainersService: WebcontainersService) {}
+    constructor(private readonly terminalService: TerminalService) { }
 
     ngAfterViewInit() {
         this.child.setXtermOptions({
@@ -20,11 +21,15 @@ export class TerminalComponent implements AfterViewInit {
         });
 
         this.child.onData().subscribe((input) => {
-            this.webcontainersService.inputTerminalPrompt.next(input);
+            this.terminalService.inputTerminalPrompt.next(input);
         });
 
-        this.webcontainersService.outputTerminalPrompt$
+        this.terminalService.outputTerminalPrompt$
             .pipe(filter((data): data is string => !!data))
             .subscribe((data) => this.child.write(data));
+    }
+
+    addShell() {
+        // this.t
     }
 }

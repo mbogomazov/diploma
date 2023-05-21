@@ -14,6 +14,15 @@
     height: 100%;
     margin-bottom: 0;
 
+    &-header {
+        display: flex;
+        align-items: center;
+
+        .icon {
+            margin-right: 12px;
+        }
+    }
+
     &-body {
         padding: 0;
     }
@@ -21,6 +30,7 @@
 
 .code-editor {
     display: block;
+    position: absolute;
 
     ::ng-deep .editor-container {
         height: 100%;

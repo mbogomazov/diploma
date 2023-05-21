@@ -27,7 +27,7 @@ export class PreviewComponent implements OnInit {
     constructor(
         private readonly webcontainersService: WebcontainersService,
         private readonly renderer: Renderer2
-    ) {}
+    ) { }
 
     ngOnInit() {
         this.webcontainersService.containerAppUrl
