@@ -8,15 +8,14 @@
             <button nbButton ghost>
                 <nb-icon icon="folder-add-outline"></nb-icon>
             </button>
-            <!-- <button nbButton ghost>
-                <nb-icon icon="sync-outline"></nb-icon>
-            </button> -->
         </div>
     </nb-card-header>
-    <nb-card-body class="container-body">
+    <nb-card-body class="container-body" #parentElem>
         <tree-root
             class="file-tree"
+            [style.height.px]="(parentElemHeight | async) ?? 0"
             (activate)="onActivate($event)"
+            [options]="options"
             [nodes]="(nodes$ | async) ?? []"
         ></tree-root>
     </nb-card-body>

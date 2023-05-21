@@ -1,3 +1,9 @@
-<button nbButton ghost>
-    <nb-icon icon="text-outline"></nb-icon>
-</button>
+<div class="container">
+    <button nbButton ghost (click)="formatDocument()">
+        <nb-icon icon="text-outline"></nb-icon>
+    </button>
+
+    <button nbButton ghost (click)="saveLocal()">
+        <nb-icon icon="save-outline"></nb-icon>
+    </button>
+</div>

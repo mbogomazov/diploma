@@ -1,8 +1,15 @@
 <nb-card class="container">
-    <nb-card-header class="container-header"
-        ><nb-icon icon="npm-outline"></nb-icon>Terminal</nb-card-header
-    >
-    <nb-card-body class="container-body"
-        ><ng-terminal #term></ng-terminal
-    ></nb-card-body>
+    <nb-card-header class="container-header">
+        <div class="left">
+            <nb-icon class="icon" icon="npm-outline"></nb-icon>Terminal
+        </div>
+        <button nbButton (click)="addShell()" ghost>
+            <nb-icon icon="plus-outline"></nb-icon>
+        </button>
+    </nb-card-header>
+    <nb-card-body class="container-body">
+        <div class="terminal-container">
+            <ng-terminal #term></ng-terminal>
+        </div>
+    </nb-card-body>
 </nb-card>

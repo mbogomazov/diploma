@@ -1,22 +1,31 @@
-<nb-layout>
-    <nb-layout-header *ngIf="(loading | async) !== true">
+<nb-layout class="layout">
+    <nb-layout-header class="layout-header" *ngIf="(loading | async) !== true">
         <online-editor-header></online-editor-header>
     </nb-layout-header>
 
     <nb-layout-column *ngIf="!!(loading | async); else app">
         <nb-card
             [nbSpinner]="!!(loading | async)"
-            nbSpinnerSize="tiny"
+            nbSpinnerSize="giant"
             nbSpinnerStatus="primary"
+            class="loading-card"
         >
-            <nb-card-body>Initializing WebContainers</nb-card-body>
+            <nb-card-body>
+                <h4>Initializing WebContainers</h4>
+            </nb-card-body>
         </nb-card>
     </nb-layout-column>
 </nb-layout>
 
 <ng-template #app>
     <nb-layout-column class="container">
-        <as-split direction="vertical" [gutterSize]="2" unit="pixel">
+        <as-split
+            direction="vertical"
+            [gutterSize]="2"
+            unit="pixel"
+            (dragStart)="horizontalDragStart($event)"
+            (dragEnd)="horizontalDragEnd($event)"
+        >
             <as-split-area>
                 <as-split
                     direction="horizontal"
@@ -25,8 +34,16 @@
                     (dragStart)="showIframeHider = true"
                     (dragEnd)="showIframeHider = false"
                 >
-                    <as-split-area [size]="20">
-                        <online-editor-tree-view></online-editor-tree-view>
+                    <as-split-area [size]="25">
+                        <div class="left-side-view">
+                            <nb-card class="left-side-view-menu-card">
+                                <nb-menu [items]="items"> </nb-menu>
+                            </nb-card>
+
+                            <online-editor-tree-view
+                                class="tree-view-container"
+                            ></online-editor-tree-view>
+                        </div>
                     </as-split-area>
                     <as-split-area [size]="45">
                         <online-editor-editor

@@ -1,3 +1,12 @@
+.layout {
+    height: 100vh;
+
+    &-header,
+    &-header ::ng-deep nav {
+        height: 50px;
+    }
+}
+
 .container,
 .terminal-container,
 .editors-container,
@@ -5,12 +14,35 @@
     width: 100%;
 }
 
+.loading-card {
+    width: 350px;
+    height: 350px;
+    margin: 0 auto;
+    text-align: center;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
 .container {
     display: flex;
     flex-direction: column;
-    height: 100vh;
-    max-height: 100vh;
     padding: 0 !important;
+}
+
+.left-side-view {
+    display: flex;
+    height: 100%;
+    justify-content: space-between;
+
+    &-menu-card {
+        margin-bottom: 0;
+    }
+}
+
+.tree-view-container {
+    width: 100%;
 }
 
 .editors-container {
@@ -25,8 +57,12 @@
     display: flex;
 }
 
+.terminal-split-area {
+    overflow-y: hidden !important;
+}
+
 .terminal-container {
-    height: 100%;
-    display: block;
+    // height: 100%;
+    // display: block;
     width: 100%;
 }

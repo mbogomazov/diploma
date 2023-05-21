@@ -1,31 +1,34 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
-import { debounceTime, filter } from 'rxjs';
-import { FilesService } from '../../services/files/files.service';
-import { EditorService } from '../../services/editor/editor.service';
+import { debounceTime, filter, map } from 'rxjs';
+import { EditorFacadeService } from '../../facades/editor/editor-facade.service';
 
 @Component({
     selector: 'online-editor-editor',
     templateUrl: './editor.component.html',
     styleUrls: ['./editor.component.scss'],
     providers: [{ provide: Window, useValue: window }],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EditorComponent implements OnInit {
+    @Input() showEditorHider = false;
+
     readonly form = new FormGroup({
         editor: new FormControl(),
     });
 
-    readonly options$ = this.editorService.options$;
+    readonly options$ = this.editorFacade.options$;
+
+    readonly openedFileName = this.editorFacade.currentOpenedFilePath.pipe(map(filepath => filepath ? filepath.split('/').slice(-1) : '...'));
 
     get editorControl() {
         return this.form.controls.editor;
     }
 
     constructor(
-        private readonly filesService: FilesService,
-        private readonly editorService: EditorService,
+        private readonly editorFacade: EditorFacadeService,
         private readonly window: Window
-    ) {}
+    ) { }
 
     ngOnInit() {
         this.editorControl.valueChanges
@@ -34,10 +37,10 @@ export class EditorComponent implements OnInit {
                 debounceTime(500)
             )
             .subscribe((value) => {
-                this.filesService.writeEditingFile(value);
+                this.editorFacade.writeEditingFile(value);
             });
 
-        this.editorService.fileData$.subscribe((fileData) =>
+        this.editorFacade.fileData$.subscribe((fileData) =>
             this.editorControl.patchValue(fileData)
         );
 
@@ -45,14 +48,20 @@ export class EditorComponent implements OnInit {
             if ((e.metaKey || e.ctrlKey) && e.key === 's') {
                 e.preventDefault();
 
-                this.filesService.writeEditingFile(this.editorControl.value);
+                this.editorFacade.writeEditingFile(this.editorControl.value);
+
+                // Save project to indexDB
             }
         });
     }
 
-    onEditorInit(editorInstance: any) {
-        console.log(editorInstance.getAction);
+    formatDocument() {
+        this.editorFacade.formatDocument();
 
-        // editorInstance.getAction('editor.action.formatDocument').run()
+        this.editorFacade.writeEditingFile(this.editorControl.value);
+    }
+
+    onEditorInit(editorInstance: any) {
+        this.editorFacade.monacoEditorInstance.next(editorInstance);
     }
 }

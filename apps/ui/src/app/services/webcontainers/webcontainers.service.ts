@@ -1,15 +1,9 @@
 import { Injectable } from '@angular/core';
 import { WebContainer } from '@webcontainer/api';
-import { BehaviorSubject, EMPTY, filter, from, map, mergeMap, tap } from 'rxjs';
+import { BehaviorSubject, EMPTY, from, map, mergeMap, tap, throwError } from 'rxjs';
 import { setupPackageJson } from '../files/files.setup';
 import { HttpClient } from '@angular/common/http';
-
-export type FileChangeEvent =
-    | 'add'
-    | 'addDir'
-    | 'change'
-    | 'unlink'
-    | 'unlinkDir';
+import { DirectoryNode } from '../../facades/editor/editor-facade.service';
 
 @Injectable({
     providedIn: 'root',
@@ -18,24 +12,18 @@ export class WebcontainersService {
     static userSystemFolderPath = '/home/httplocalhost4200-mobu/';
 
     private webcontainerInstance!: WebContainer;
-    private readonly outputTerminalPrompt = new BehaviorSubject<string | null>(
-        null
-    );
-    private readonly fileSystemChanges = new BehaviorSubject<{
-        event: FileChangeEvent;
-        path: string;
-    } | null>(null);
+
+    private readonly fileSystemChanges =
+        new BehaviorSubject<DirectoryNode | null>(null);
 
     private fileWatchScriptContent = '';
-    private readonly commands: Array<string> = [];
 
     readonly containerAppUrl = new BehaviorSubject<string | null>(null);
     readonly inputTerminalPrompt = new BehaviorSubject<string | null>(null);
 
-    readonly outputTerminalPrompt$ = this.outputTerminalPrompt.asObservable();
     readonly fileSystemChanges$ = this.fileSystemChanges.asObservable();
 
-    constructor(private readonly http: HttpClient) {}
+    constructor(private readonly http: HttpClient) { }
 
     boot() {
         return this.http
@@ -65,7 +53,6 @@ export class WebcontainersService {
                     )
                 ),
                 mergeMap(() => this.watchFileChanges()),
-                mergeMap(() => this.startShell()),
                 tap(() => {
                     this.webcontainerInstance?.on(
                         'server-ready',
@@ -75,7 +62,7 @@ export class WebcontainersService {
                     );
 
                     this.webcontainerInstance?.on('error', (error) =>
-                        console.log(error)
+                        throwError(() => new Error(error.message))
                     );
                 })
             );
@@ -102,26 +89,8 @@ export class WebcontainersService {
         );
     }
 
-    private startShell() {
-        return from(this.webcontainerInstance.spawn('jsh')).pipe(
-            map((shellProcess) => {
-                shellProcess.output.pipeTo(
-                    new WritableStream({
-                        write: (data) => {
-                            this.outputTerminalPrompt.next(data);
-                        },
-                    })
-                );
-
-                const input = shellProcess.input.getWriter();
-
-                this.inputTerminalPrompt
-                    .pipe(filter((data): data is string => !!data))
-                    .subscribe((data) => {
-                        input.write(data);
-                    });
-            })
-        );
+    startShell() {
+        return from(this.webcontainerInstance.spawn('jsh'));
     }
 
     private watchFileChanges() {
@@ -140,23 +109,12 @@ export class WebcontainersService {
                 shellProcess.output.pipeTo(
                     new WritableStream({
                         write: (data) => {
-                            const [event, ...path] = data.split(' ');
-                            this.commands.push(data);
+                            const rootFileSystemStructure: DirectoryNode =
+                                JSON.parse(data);
 
-                            if (!path.includes('node_modules')) {
-                                console.log();
-                            }
-
-                            this.fileSystemChanges.next({
-                                event: event as FileChangeEvent,
-                                path: path
-                                    .join(' ')
-                                    .replace(/\n/g, '')
-                                    .replace(
-                                        WebcontainersService.userSystemFolderPath,
-                                        ''
-                                    ),
-                            });
+                            this.fileSystemChanges.next(
+                                rootFileSystemStructure
+                            );
                         },
                     })
                 );
