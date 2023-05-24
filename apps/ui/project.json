@@ -25,8 +25,8 @@
           },
           {
             "glob": "**/*",
-            "input": "libs/chokidar/dist/",
-            "output": "./assets/file-watch-script"
+            "input": "libs/webcontainers-helpers/dist/",
+            "output": "./assets/webcontainers-helpers"
           }
         ],
         "styles": ["apps/ui/src/styles.scss", "node_modules/@nebular/theme/styles/prebuilt/default.css", "node_modules/@nebular/theme/styles/prebuilt/cosmic.css", "node_modules/@nebular/theme/styles/prebuilt/dark.css"],
@@ -74,7 +74,8 @@
         "headers": {
           "Cross-Origin-Embedder-Policy": "credentialless",
           "Cross-Origin-Opener-Policy":"same-origin"
-        }
+        },
+        "proxyConfig": "apps/ui/src/proxy.conf.json"
       }
     },
     "extract-i18n": {

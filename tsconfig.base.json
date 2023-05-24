@@ -15,7 +15,10 @@
         "skipDefaultLibCheck": true,
         "baseUrl": ".",
         "paths": {
-            "@online-editor/chokidar": ["libs/chokidar/src/index.ts"]
+            "@online-editor/types": ["libs/types/src/index.ts"],
+            "@online-editor/webcontainers-libraries": [
+                "libs/webcontainers-helpers/src/index.ts"
+            ]
         }
     },
     "exclude": ["node_modules", "tmp"]
