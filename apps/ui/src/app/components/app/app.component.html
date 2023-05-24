@@ -1,11 +1,11 @@
-<nb-layout class="layout">
-    <nb-layout-header class="layout-header" *ngIf="(loading | async) !== true">
+<nb-layout class="layout" [withScroll]="true">
+    <nb-layout-header class="layout-header" *ngIf="(loading$ | async) !== true">
         <online-editor-header></online-editor-header>
     </nb-layout-header>
 
-    <nb-layout-column *ngIf="!!(loading | async); else app">
+    <nb-layout-column *ngIf="!!(loading$ | async); else app">
         <nb-card
-            [nbSpinner]="!!(loading | async)"
+            [nbSpinner]="!!(loading$ | async)"
             nbSpinnerSize="giant"
             nbSpinnerStatus="primary"
             class="loading-card"
@@ -19,13 +19,7 @@
 
 <ng-template #app>
     <nb-layout-column class="container">
-        <as-split
-            direction="vertical"
-            [gutterSize]="2"
-            unit="pixel"
-            (dragStart)="horizontalDragStart($event)"
-            (dragEnd)="horizontalDragEnd($event)"
-        >
+        <as-split direction="vertical" [gutterSize]="2" unit="pixel">
             <as-split-area>
                 <as-split
                     direction="horizontal"
@@ -35,15 +29,7 @@
                     (dragEnd)="showIframeHider = false"
                 >
                     <as-split-area [size]="25">
-                        <div class="left-side-view">
-                            <nb-card class="left-side-view-menu-card">
-                                <nb-menu [items]="items"> </nb-menu>
-                            </nb-card>
-
-                            <online-editor-tree-view
-                                class="tree-view-container"
-                            ></online-editor-tree-view>
-                        </div>
+                        <online-editor-left-menu></online-editor-left-menu>
                     </as-split-area>
                     <as-split-area [size]="45">
                         <online-editor-editor

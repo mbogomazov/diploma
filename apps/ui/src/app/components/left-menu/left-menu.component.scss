@@ -1,0 +1,25 @@
+.left-side-view {
+    display: flex;
+    height: 100%;
+    justify-content: space-between;
+
+    &-menu-card {
+        margin-bottom: 0;
+    }
+}
+
+.panels-container {
+    width: 100%;
+    height: 100%;
+}
+
+.left-panel {
+    width: 100%;
+    height: 100%;
+
+    display: none;
+
+    &.visible {
+        display: block;
+    }
+}

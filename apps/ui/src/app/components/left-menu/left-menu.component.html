@@ -1,0 +1,24 @@
+<div class="left-side-view">
+    <nb-card class="left-side-view-menu-card">
+        <nb-list>
+            <nb-list-item
+                (click)="selectPanel(item.panel)"
+                *ngFor="let item of items"
+            >
+                <nb-icon [icon]="item.icon"></nb-icon>
+            </nb-list-item>
+        </nb-list>
+    </nb-card>
+
+    <div class="panels-container">
+        <online-editor-tree-view
+            class="left-panel"
+            [class.visible]="(currentPanel | async) === 'files'"
+        ></online-editor-tree-view>
+
+        <online-editor-search-panel
+            class="left-panel"
+            [class.visible]="(currentPanel | async) === 'search-replace'"
+        ></online-editor-search-panel>
+    </div>
+</div>

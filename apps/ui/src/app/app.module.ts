@@ -10,9 +10,9 @@ import { NgTerminalModule } from 'ng-terminal';
 import { AngularSplitModule } from 'angular-split';
 import { MonacoEditorModule } from 'ngx-monaco-editor-emmet';
 
-import { AppComponent } from './app.component';
+import { AppComponent } from './components/app/app.component';
 import { appRoutes } from './app.routes';
-import { SafePipe } from './safe.pipe';
+import { SafePipe } from './pipes/safe.pipe';
 import { PreviewComponent } from './components/preview/preview.component';
 import { EditorComponent } from './components/editor/editor.component';
 import { TerminalComponent } from './components/terminal/terminal.component';
@@ -23,7 +23,9 @@ import {
     NbCardModule,
     NbDialogModule,
     NbIconModule,
+    NbInputModule,
     NbLayoutModule,
+    NbListModule,
     NbMenuModule,
     NbSpinnerModule,
     NbThemeModule,
@@ -32,9 +34,12 @@ import {
 import { NbEvaIconsModule } from '@nebular/eva-icons';
 import { HeaderComponent } from './components/header/header.component';
 import { SearchPanelComponent } from './components/panels/search/search-panel.component';
-import { ErrorDialogComponent } from './components/error-dialog/error-dialog.component';
+import { ErrorDialogComponent } from './components/dialogs/error/error-dialog.component';
 import { NgxIndexedDBModule } from 'ngx-indexed-db';
 import { fileDbConfig } from './services/files-storage/files-storage.service';
+import { RestoreProjectDialogComponent } from './components/dialogs/restore-project-dialog/restore-project-dialog.component';
+import { AddFileFolderComponent } from './components/dialogs/add-file-folder/add-file-folder.component';
+import { LeftMenuComponent } from './components/left-menu/left-menu.component';
 
 @NgModule({
     declarations: [
@@ -47,6 +52,9 @@ import { fileDbConfig } from './services/files-storage/files-storage.service';
         HeaderComponent,
         SearchPanelComponent,
         ErrorDialogComponent,
+        RestoreProjectDialogComponent,
+        AddFileFolderComponent,
+        LeftMenuComponent,
     ],
     imports: [
         BrowserModule,
@@ -69,7 +77,9 @@ import { fileDbConfig } from './services/files-storage/files-storage.service';
         NbToastrModule.forRoot(),
         NgxIndexedDBModule.forRoot(fileDbConfig),
         NbLayoutModule,
+        NbListModule,
         NbCardModule,
+        NbInputModule,
         NbAlertModule,
         NbEvaIconsModule,
         NbIconModule,
@@ -79,4 +89,4 @@ import { fileDbConfig } from './services/files-storage/files-storage.service';
     providers: [],
     bootstrap: [AppComponent],
 })
-export class AppModule { }
+export class AppModule {}
