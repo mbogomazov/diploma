@@ -1,0 +1,1 @@
+export const clearString = (str: string) => str.length < 12 ? str : (' ' + str).slice(1)
