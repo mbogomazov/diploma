@@ -1,24 +1,24 @@
 {
-    "name": "chokidar",
+    "name": "webcontainers-helpers",
     "$schema": "../../node_modules/nx/schemas/project-schema.json",
-    "sourceRoot": "libs/chokidar/src",
+    "sourceRoot": "libs/webcontainers-helpers/src",
     "projectType": "library",
     "targets": {
         "build": {
             "executor": "@nrwl/js:tsc",
             "outputs": ["{options.outputPath}"],
             "options": {
-                "outputPath": "dist/libs/chokidar",
-                "main": "libs/chokidar/src/index.ts",
-                "tsConfig": "libs/chokidar/tsconfig.lib.json",
-                "assets": ["libs/chokidar/*.md"]
+                "outputPath": "dist/libs/webcontainers-helpers",
+                "main": "libs/webcontainers-helpers/src/index.ts",
+                "tsConfig": "libs/webcontainers-helpers/tsconfig.lib.json",
+                "assets": ["libs/webcontainers-helpers/*.md"]
             }
         },
         "lint": {
             "executor": "@nrwl/linter:eslint",
             "outputs": ["{options.outputFile}"],
             "options": {
-                "lintFilePatterns": ["libs/chokidar/**/*.ts"]
+                "lintFilePatterns": ["libs/webcontainers-helpers/**/*.ts"]
             }
         }
     },

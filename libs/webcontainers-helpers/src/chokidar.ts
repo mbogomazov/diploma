@@ -1,18 +1,10 @@
+import { DirectoryNode, FileNode } from '@online-editor/types';
 import * as chokidar from 'chokidar';
+// nx thinks it's relative import by no reason
+// eslint-disable-next-line @nrwl/nx/enforce-module-boundaries
 import * as dirTree from 'directory-tree';
 
 let timeoutId: NodeJS.Timeout | null = null;
-
-type FileNode = {
-    name: string;
-    path: string;
-}
-
-type DirectoryNode = {
-    name: string;
-    path: string;
-    children: Array<FileNode | DirectoryNode>
-}
 
 export const debounce = (func: () => void, delay = 1000) => {
     if (timeoutId) {
@@ -23,7 +15,7 @@ export const debounce = (func: () => void, delay = 1000) => {
         func();
         timeoutId = null;
     }, delay);
-}
+};
 
 const watcher = chokidar.watch('**/*', {
     persistent: true,
@@ -38,7 +30,9 @@ watcher.on('all', () => {
     }, 1000);
 });
 
-const sortNodes = (rootNode: Array<FileNode | DirectoryNode>): Array<FileNode | DirectoryNode> => {
+const sortNodes = (
+    rootNode: Array<FileNode | DirectoryNode>
+): Array<FileNode | DirectoryNode> => {
     rootNode.sort((a, b) => {
         if (isDirectory(a) && isDirectory(b)) {
             return a.name.localeCompare(b.name);
@@ -57,7 +51,7 @@ const sortNodes = (rootNode: Array<FileNode | DirectoryNode>): Array<FileNode | 
         }
 
         return a.name.localeCompare(b.name);
-    })
+    });
 
     for (const node of rootNode) {
         if (isDirectory(node)) {
@@ -66,8 +60,10 @@ const sortNodes = (rootNode: Array<FileNode | DirectoryNode>): Array<FileNode | 
     }
 
     return rootNode;
-}
+};
 
-export const isDirectory = (node: FileNode | DirectoryNode): node is DirectoryNode => {
+export const isDirectory = (
+    node: FileNode | DirectoryNode
+): node is DirectoryNode => {
     return 'children' in node;
-}
+};
