@@ -31,20 +31,6 @@
     padding: 0 !important;
 }
 
-.left-side-view {
-    display: flex;
-    height: 100%;
-    justify-content: space-between;
-
-    &-menu-card {
-        margin-bottom: 0;
-    }
-}
-
-.tree-view-container {
-    width: 100%;
-}
-
 .editors-container {
     display: flex;
     justify-content: space-between;
@@ -59,6 +45,7 @@
 
 .terminal-split-area {
     overflow-y: hidden !important;
+    max-height: 50vh;
 }
 
 .terminal-container {
