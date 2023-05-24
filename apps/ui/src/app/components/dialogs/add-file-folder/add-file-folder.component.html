@@ -1,0 +1,16 @@
+<nb-card>
+    <nb-card-header>Add {{ type }}</nb-card-header>
+    <nb-card-body>
+        <form (submit)="submit()">
+            <input
+                type="text"
+                nbInput
+                [placeholder]="type + ' name'"
+                [formControl]="inputControl"
+            />
+        </form>
+    </nb-card-body>
+    <nb-card-footer class="card-footer">
+        <button nbButton status="info" (click)="submit()">Create</button>
+    </nb-card-footer>
+</nb-card>
