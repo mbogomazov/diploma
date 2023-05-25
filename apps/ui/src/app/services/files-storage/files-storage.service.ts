@@ -1,40 +1,53 @@
 import { Injectable } from '@angular/core';
 import { DBConfig, NgxIndexedDBService } from 'ngx-indexed-db';
-import { Observable } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
-import { DirectoryNode, FileNode } from '../../facades/editor/editor-facade.service';
+import { EMPTY, Observable, from } from 'rxjs';
+import { switchMap, mergeMap } from 'rxjs/operators';
+import { WebcontainersService } from '../webcontainers/webcontainers.service';
+import { DirectoryNode, FileNode } from '@online-editor/types';
 
 export const fileDbConfig: DBConfig = {
     name: 'FileDb',
     version: 1,
-    objectStoresMeta: [{
-        store: 'files',
-        storeConfig: { keyPath: 'path', autoIncrement: false },
-        storeSchema: [
-            { name: 'path', keypath: 'path', options: { unique: true } },
-            { name: 'content', keypath: 'content', options: { unique: false } }
-        ]
-    }]
+    objectStoresMeta: [
+        {
+            store: 'files',
+            storeConfig: { keyPath: 'path', autoIncrement: false },
+            storeSchema: [
+                { name: 'path', keypath: 'path', options: { unique: true } },
+                {
+                    name: 'content',
+                    keypath: 'content',
+                    options: { unique: false },
+                },
+            ],
+        },
+    ],
 };
 
 type FileStorageNode = {
     path: string;
     content: string;
-}
+};
 
 const fileSystemDirectoriesStoreName = 'fileSystemDirectoriesStoreName';
 
 @Injectable({
-    providedIn: 'root'
+    providedIn: 'root',
 })
 export class FileStorageService {
-    constructor(private dbService: NgxIndexedDBService) { }
+    constructor(
+        private readonly dbService: NgxIndexedDBService,
+        private readonly webcontainersService: WebcontainersService
+    ) {}
 
     addOrUpdateFile(file: FileStorageNode): Observable<FileStorageNode> {
         return this.dbService.getByKey('files', file.path).pipe(
-            switchMap(existingEntry => {
+            switchMap((existingEntry) => {
                 if (existingEntry) {
-                    return this.dbService.update<FileStorageNode>('files', file);
+                    return this.dbService.update<FileStorageNode>(
+                        'files',
+                        file
+                    );
                 } else {
                     return this.dbService.add<FileStorageNode>('files', file);
                 }
@@ -50,12 +63,37 @@ export class FileStorageService {
         return this.dbService.delete('files', path);
     }
 
-    addOrUpdateDirectoriesStructure(nodes: Array<FileNode | DirectoryNode>): void {
-        localStorage.setItem(fileSystemDirectoriesStoreName, JSON.stringify(nodes));
+    clearFiles() {
+        // return this.dbService.deleteDatabase()
+        return this.dbService.clear('files');
     }
 
-    getDirectoriesStructureByPath(): Array<DirectoryNode> | undefined {
-        const stringifiedFilesStructure = localStorage.getItem(fileSystemDirectoriesStoreName);
+    getAllFiles() {
+        return this.dbService.getAll<{ path: string; content: string }>(
+            'files'
+        );
+    }
+
+    addOrUpdateDirectoriesStructure(
+        nodes: Array<FileNode | DirectoryNode>
+    ): void {
+        const onlyDirectoriesNodes = nodes
+            .filter(
+                (node): node is DirectoryNode =>
+                    'children' in node && node.name !== 'node_modules'
+            )
+            .map((node) => this.getDirectoriesOnly(node));
+
+        localStorage.setItem(
+            fileSystemDirectoriesStoreName,
+            JSON.stringify(onlyDirectoriesNodes)
+        );
+    }
+
+    getDirectoriesStructure(): Array<DirectoryNode> | undefined {
+        const stringifiedFilesStructure = localStorage.getItem(
+            fileSystemDirectoriesStoreName
+        );
 
         if (!stringifiedFilesStructure) {
             return;
@@ -69,6 +107,65 @@ export class FileStorageService {
     }
 
     isProjectSavedLocally() {
-        return fileSystemDirectoriesStoreName in localStorage
+        return fileSystemDirectoriesStoreName in localStorage;
+    }
+
+    restoreProject() {
+        const directories = this.getDirectoriesStructure();
+
+        if (!directories) {
+            return EMPTY;
+        }
+
+        return this.restoreDirectories(directories).pipe(
+            mergeMap(() => this.getAllFiles()),
+            mergeMap((files) => from(files)),
+            mergeMap(({ path, content }) =>
+                this.webcontainersService.writeFile(path, content)
+            )
+        );
+    }
+
+    private getDirectoriesOnly(node: DirectoryNode): DirectoryNode {
+        return {
+            ...node,
+            children: node.children
+                .filter(
+                    (child): child is DirectoryNode =>
+                        'children' in child && child.name !== 'node_modules'
+                )
+                .map((child) => this.getDirectoriesOnly(child)),
+        };
+    }
+
+    private restoreDirectories(directories: Array<DirectoryNode>) {
+        const flattenDirectories = this.getAllDirectories(directories);
+
+        return from(flattenDirectories).pipe(
+            mergeMap(({ path }) => this.webcontainersService.mkDir(path))
+        );
+    }
+
+    private getAllDirectories(
+        directories: Array<DirectoryNode>
+    ): DirectoryNode[] {
+        const allDirectories: Array<DirectoryNode> = [];
+
+        for (const directory of directories) {
+            this.dfs(allDirectories, directory);
+        }
+
+        return allDirectories;
+    }
+
+    private dfs(
+        directories: Array<DirectoryNode>,
+        curDirectory: DirectoryNode
+    ) {
+        directories.push(curDirectory);
+
+        for (const child of curDirectory.children) {
+            this.dfs(directories, child as DirectoryNode);
+        }
     }
 }

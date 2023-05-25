@@ -8,8 +8,24 @@
         </button>
     </nb-card-header>
     <nb-card-body class="container-body">
-        <div class="terminal-container">
+        <div
+            class="terminal-container"
+            [class.list-card-visible]="(showTerminalPanel | async) === true"
+        >
             <ng-terminal #term></ng-terminal>
         </div>
+        <nb-card
+            [hidden]="(showTerminalPanel | async) === false"
+            class="card-list"
+        >
+            <nb-list>
+                <nb-list-item
+                    (click)="selectShell(shellIndex)"
+                    *ngFor="let shellIndex of shellsIndexes$ | async"
+                >
+                    {{ shellIndex }}
+                </nb-list-item>
+            </nb-list>
+        </nb-card>
     </nb-card-body>
 </nb-card>

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, EMPTY, catchError } from 'rxjs';
 import { editorsOptions } from '../../components/editor/editor.model';
+import { WebcontainersService } from '../webcontainers/webcontainers.service';
 
 @Injectable({
     providedIn: 'root',
@@ -23,13 +24,13 @@ export class EditorService {
 
     readonly options$ = this.options.asObservable();
 
-    setFileData(name: string, data: string, currentOpenedFilePath: string) {
+    setFileData(name: string, data: string) {
         this.fileData.next(data);
 
-        this.setEditorOptions(name, currentOpenedFilePath);
+        this.setEditorOptions(name);
     }
 
-    setEditorOptions(name: string, currentOpenedFilePath: string) {
+    setEditorOptions(name: string) {
         const extension = name.split('.').slice(-1).pop();
 
         if (!extension) {
@@ -38,42 +39,12 @@ export class EditorService {
             return;
         }
 
-        if (['ts', 'tsx'].includes(extension)) {
-            this.findNearestTsconfig(currentOpenedFilePath);
-        }
-
         const languageOptions = editorsOptions[extension];
 
         this.options.next({
             ...this.options.value,
             ...languageOptions,
-            useEmmet: languageOptions.useEmmet ?? false,
+            useEmmet: languageOptions?.useEmmet ?? false,
         });
-    }
-
-    private findNearestTsconfig(openedFilePath: string): string | null {
-        const currentPath = openedFilePath.split('/');
-
-        currentPath.pop();
-
-        // while (currentPath.length > 0) {
-        //     const potentialTsconfigPath = [
-        //         ...currentPath,
-        //         'tsconfig.json',
-        //     ].join('/');
-
-        //     const tsConfigNode = fileSystemStructure.find(
-        //         (node: FileNode | DirectoryNode) =>
-        //             node.path === potentialTsconfigPath
-        //     );
-
-        //     if (tsConfigNode) {
-        //         return tsConfigNode.path;
-        //     }
-
-        //     currentPath.pop();
-        // }
-
-        return null;
     }
 }

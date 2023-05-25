@@ -1,110 +1,117 @@
 {
-  "name": "ui",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "projectType": "application",
-  "sourceRoot": "apps/ui/src",
-  "prefix": "online-editor",
-  "targets": {
-    "build": {
-      "executor": "@angular-devkit/build-angular:browser",
-      "outputs": ["{options.outputPath}"],
-      "options": {
-        "outputPath": "dist/apps/ui",
-        "index": "apps/ui/src/index.html",
-        "main": "apps/ui/src/main.ts",
-        "polyfills": ["zone.js"],
-        "tsConfig": "apps/ui/tsconfig.app.json",
-        "inlineStyleLanguage": "scss",
-        "assets": [
-          "apps/ui/src/favicon.ico",
-          "apps/ui/src/assets",
-          {
-            "glob": "**/*",
-            "input": "node_modules/monaco-editor/min",
-            "output": "./assets/monaco/min"
-          },
-          {
-            "glob": "**/*",
-            "input": "libs/webcontainers-helpers/dist/",
-            "output": "./assets/webcontainers-helpers"
-          }
-        ],
-        "styles": ["apps/ui/src/styles.scss", "node_modules/@nebular/theme/styles/prebuilt/default.css", "node_modules/@nebular/theme/styles/prebuilt/cosmic.css", "node_modules/@nebular/theme/styles/prebuilt/dark.css"],
-        "scripts": []
-      },
-      "configurations": {
-        "production": {
-          "budgets": [
-            {
-              "type": "initial",
-              "maximumWarning": "500kb",
-              "maximumError": "4mb"
+    "name": "ui",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "projectType": "application",
+    "sourceRoot": "apps/ui/src",
+    "prefix": "online-editor",
+    "targets": {
+        "build": {
+            "executor": "@angular-devkit/build-angular:browser",
+            "outputs": ["{options.outputPath}"],
+            "options": {
+                "outputPath": "dist/apps/ui",
+                "index": "apps/ui/src/index.html",
+                "main": "apps/ui/src/main.ts",
+                "polyfills": ["zone.js"],
+                "tsConfig": "apps/ui/tsconfig.app.json",
+                "inlineStyleLanguage": "scss",
+                "assets": [
+                    "apps/ui/src/favicon.ico",
+                    "apps/ui/src/assets",
+                    {
+                        "glob": "**/*",
+                        "input": "node_modules/monaco-editor/min",
+                        "output": "./assets/monaco/min"
+                    },
+                    {
+                        "glob": "**/*",
+                        "input": "libs/webcontainers-helpers/dist/",
+                        "output": "./assets/webcontainers-helpers"
+                    }
+                ],
+                "styles": [
+                    "apps/ui/src/styles.scss",
+                    "node_modules/@nebular/theme/styles/prebuilt/default.css",
+                    "node_modules/@nebular/theme/styles/prebuilt/cosmic.css",
+                    "node_modules/@nebular/theme/styles/prebuilt/dark.css"
+                ],
+                "scripts": [],
+                "webWorkerTsConfig": "apps/ui/tsconfig.worker.json"
             },
-            {
-              "type": "anyComponentStyle",
-              "maximumWarning": "2kb",
-              "maximumError": "4kb"
+            "configurations": {
+                "production": {
+                    "budgets": [
+                        {
+                            "type": "initial",
+                            "maximumWarning": "500kb",
+                            "maximumError": "4mb"
+                        },
+                        {
+                            "type": "anyComponentStyle",
+                            "maximumWarning": "2kb",
+                            "maximumError": "4kb"
+                        }
+                    ],
+                    "outputHashing": "all"
+                },
+                "development": {
+                    "buildOptimizer": false,
+                    "optimization": false,
+                    "vendorChunk": true,
+                    "extractLicenses": false,
+                    "sourceMap": true,
+                    "namedChunks": true
+                }
+            },
+            "defaultConfiguration": "production"
+        },
+        "serve": {
+            "executor": "@angular-devkit/build-angular:dev-server",
+            "configurations": {
+                "production": {
+                    "browserTarget": "ui:build:production"
+                },
+                "development": {
+                    "browserTarget": "ui:build:development"
+                }
+            },
+            "defaultConfiguration": "development",
+            "options": {
+                "headers": {
+                    "Cross-Origin-Embedder-Policy": "credentialless",
+                    "Cross-Origin-Opener-Policy": "same-origin"
+                },
+                "proxyConfig": "apps/ui/src/proxy.conf.json"
             }
-          ],
-          "outputHashing": "all"
         },
-        "development": {
-          "buildOptimizer": false,
-          "optimization": false,
-          "vendorChunk": true,
-          "extractLicenses": false,
-          "sourceMap": true,
-          "namedChunks": true
-        }
-      },
-      "defaultConfiguration": "production"
-    },
-    "serve": {
-      "executor": "@angular-devkit/build-angular:dev-server",
-      "configurations": {
-        "production": {
-          "browserTarget": "ui:build:production"
+        "extract-i18n": {
+            "executor": "@angular-devkit/build-angular:extract-i18n",
+            "options": {
+                "browserTarget": "ui:build"
+            }
         },
-        "development": {
-          "browserTarget": "ui:build:development"
-        }
-      },
-      "defaultConfiguration": "development",
-      "options": {
-        "headers": {
-          "Cross-Origin-Embedder-Policy": "credentialless",
-          "Cross-Origin-Opener-Policy":"same-origin"
+        "lint": {
+            "executor": "@nrwl/linter:eslint",
+            "outputs": ["{options.outputFile}"],
+            "options": {
+                "lintFilePatterns": ["apps/ui/**/*.ts", "apps/ui/**/*.html"]
+            }
         },
-        "proxyConfig": "apps/ui/src/proxy.conf.json"
-      }
-    },
-    "extract-i18n": {
-      "executor": "@angular-devkit/build-angular:extract-i18n",
-      "options": {
-        "browserTarget": "ui:build"
-      }
-    },
-    "lint": {
-      "executor": "@nrwl/linter:eslint",
-      "outputs": ["{options.outputFile}"],
-      "options": {
-        "lintFilePatterns": ["apps/ui/**/*.ts", "apps/ui/**/*.html"]
-      }
-    },
-    "test": {
-      "executor": "@nrwl/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
-      "options": {
-        "jestConfig": "apps/ui/jest.config.ts",
-        "passWithNoTests": true
-      },
-      "configurations": {
-        "ci": {
-          "ci": true,
-          "codeCoverage": true
+        "test": {
+            "executor": "@nrwl/jest:jest",
+            "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+            "options": {
+                "jestConfig": "apps/ui/jest.config.ts",
+                "passWithNoTests": true,
+                "webWorkerTsConfig": "apps/ui/tsconfig.worker.json"
+            },
+            "configurations": {
+                "ci": {
+                    "ci": true,
+                    "codeCoverage": true
+                }
+            }
         }
-      }
-    }
-  },
-  "tags": []
+    },
+    "tags": []
 }

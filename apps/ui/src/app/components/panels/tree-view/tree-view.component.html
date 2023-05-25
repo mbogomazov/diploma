@@ -1,19 +1,24 @@
-<nb-card class="container">
+<nb-card class="container" #parentElem>
     <nb-card-header class="container-header"
         >Files
         <div class="icons-container">
-            <button nbButton ghost>
+            <button nbButton ghost (click)="addFile()">
                 <nb-icon icon="file-add-outline"></nb-icon>
             </button>
-            <button nbButton ghost>
+            <button nbButton ghost (click)="addFolder()">
                 <nb-icon icon="folder-add-outline"></nb-icon>
             </button>
         </div>
     </nb-card-header>
-    <nb-card-body class="container-body" #parentElem>
+
+    <nb-card-body
+        class="container-body"
+        #cardBodyTree
+        [style.maxHeight.px]="(bodyContainerHeight | async) ?? 0"
+    >
         <tree-root
             class="file-tree"
-            [style.height.px]="(parentElemHeight | async) ?? 0"
+            [(state)]="state"
             (activate)="onActivate($event)"
             [options]="options"
             [nodes]="(nodes$ | async) ?? []"
