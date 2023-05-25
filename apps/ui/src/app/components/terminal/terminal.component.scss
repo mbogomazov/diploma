@@ -19,10 +19,28 @@
         padding: 0;
         height: 100%;
         position: relative;
+        overflow-y: hidden;
+        display: flex;
+        justify-content: space-between;
     }
 
     height: 100%;
 }
+
+.terminal-container {
+    width: 100vw;
+
+    &.list-card-visible {
+        min-width: calc(100vw - 45px);
+        max-width: calc(100vw - 45px);
+    }
+}
+
+.card-list {
+    margin-bottom: 0;
+}
+
+// terminal custom styles
 :host ::ng-deep {
     .xterm .xterm-viewport {
         background-color: transparent;
@@ -45,4 +63,8 @@
     .xterm-viewport::-webkit-scrollbar-thumb {
         background: var(--highlight);
     }
+}
+
+[hidden] {
+    display: none !important;
 }

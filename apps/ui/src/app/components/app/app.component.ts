@@ -1,4 +1,9 @@
-import { Component, HostListener, OnInit } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    HostListener,
+    OnInit,
+} from '@angular/core';
 import { BehaviorSubject, take } from 'rxjs';
 import { NbIconLibraries } from '@nebular/theme';
 import { EditorFacadeService } from '../../facades/editor/editor-facade.service';
@@ -10,6 +15,7 @@ import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
     templateUrl: './app.component.html',
     styleUrls: ['./app.component.scss'],
     providers: [{ provide: Window, useValue: window }],
+    changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppComponent implements OnInit {
     readonly loading$ = this.editorFacade.loading$;

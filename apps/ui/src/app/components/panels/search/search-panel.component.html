@@ -1,8 +1,24 @@
 <nb-card class="container">
-    <nb-card-header class="container-header"
-        >Search
-    </nb-card-header>
-    <nb-card-body class="container-body">
-       
+    <nb-card-header class="container-header">Search</nb-card-header>
+    <nb-card-body
+        class="container-body"
+        [nbSpinner]="!!(loading | async)"
+        nbSpinnerSize="large"
+        nbSpinnerStatus="primary"
+    >
+        <form [formGroup]="form" class="form">
+            <input
+                nbInput
+                class="search-input"
+                [formControl]="form.controls.search"
+                placeholder="Search"
+            />
+        </form>
+
+        <nb-list *ngIf="">
+            <nb-list-item *ngFor="let result of results | async">
+                <span>{{ result }}</span>
+            </nb-list-item>
+        </nb-list>
     </nb-card-body>
 </nb-card>

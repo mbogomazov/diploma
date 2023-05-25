@@ -1,0 +1,19 @@
+version: '3'
+services:
+  ui:
+    # depends_on:
+    # - api
+    image: nginx
+    restart: always
+    ports:
+      - 80:80
+      # - 443:443/tcp
+    volumes:
+     - ./dist/apps/ui:/usr/share/nginx/html/
+     - ./default.conf/:/etc/nginx/conf.d/default.conf
+    networks:
+     - app-network
+
+networks:
+  app-network:
+    driver: bridge

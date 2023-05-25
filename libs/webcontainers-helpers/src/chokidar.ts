@@ -20,11 +20,14 @@ export const debounce = (func: () => void, delay = 1000) => {
 const watcher = chokidar.watch('**/*', {
     persistent: true,
     interval: 1000,
+    ignored: ['**/node_modules/**', '**/.git/**'],
 });
 
 watcher.on('all', () => {
     debounce(() => {
-        const rootDirNode = dirTree('.') as DirectoryNode;
+        const rootDirNode = dirTree('.', {
+            exclude: /node_modules/,
+        }) as DirectoryNode;
 
         console.log(JSON.stringify(sortNodes([rootDirNode])[0]));
     }, 1000);

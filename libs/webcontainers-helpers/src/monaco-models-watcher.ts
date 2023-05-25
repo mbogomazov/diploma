@@ -3,14 +3,15 @@ import * as chokidar from 'chokidar';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const FileModelUpdates: Array<FileModelUpdate> = [];
 let timerId: NodeJS.Timeout | null = null;
 
 const watcher = chokidar.watch(
-    ['**/*.ts', '**/*.js', '**/*.json', '**/node_modules/**/index.d.ts'],
+    ['**/*.ts', '**/*.js', '**/*.json'],
+    // '**/node_modules/**/index.d.ts'
     {
-        ignored: /(^|[/\\])\../,
+        ignored: /(^|[\/\\])\../,
         persistent: true,
+        interval: 1000,
     }
 );
 
@@ -27,6 +28,7 @@ watcher
             content: fs.readFileSync(filePath, 'utf-8'),
             npmPackageFile: filePath.includes('node_modules'),
         });
+
         sendUpdatesIfNecessary();
     })
     .on('change', (filePath: string) => {
@@ -50,17 +52,18 @@ watcher
             language: language,
             npmPackageFile: filePath.includes('node_modules'),
         });
+
         sendUpdatesIfNecessary();
     });
 
 const sendUpdatesIfNecessary = () => {
-    if (!timerId && FileModelUpdates.length > 0) {
+    if (!timerId && fileUpdates.length > 0) {
         timerId = setInterval(() => {
-            const updatesToSend = FileModelUpdates.splice(0, 10);
+            const updatesToSend = fileUpdates.splice(0, 10);
 
             sendUpdates(updatesToSend);
 
-            if (FileModelUpdates.length === 0 && timerId) {
+            if (fileUpdates.length === 0 && timerId) {
                 clearInterval(timerId);
 
                 timerId = null;

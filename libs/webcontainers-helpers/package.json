@@ -10,11 +10,11 @@
         "directory-tree": "^3.5.1",
         "ts-loader": "^9.4.2",
         "typescript": "^5.0.4",
-        "webpack": "^5.82.0",
-        "webpack-cli": "^5.0.2"
+        "webpack": "^5.82.0"
     },
     "devDependencies": {
         "@types/async": "^3.2.20",
-        "@types/glob": "^8.1.0"
+        "@types/glob": "^8.1.0",
+        "webpack-cli": "^5.1.1"
     }
 }
