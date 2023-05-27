@@ -46,10 +46,7 @@ export class AppComponent implements OnInit, OnDestroy {
     }
 
     private boot() {
-        this.editorFacade
-            .boot()
-            .pipe(take(1), untilDestroyed(this))
-            .subscribe();
+        this.editorFacade.boot().pipe(untilDestroyed(this)).subscribe();
     }
 
     ngOnDestroy() {

@@ -15,11 +15,4 @@ export const editorsOptions: { [key: string]: any } = {
         language: 'typescript',
         useEmmet: 'emmetJsx',
     },
-    txt: {
-        language: 'text',
-        useEmmet: true,
-    },
-    json: {
-        language: 'json',
-    },
 };

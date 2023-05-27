@@ -45,7 +45,6 @@ import { LeftMenuComponent } from './components/left-menu/left-menu.component';
 @NgModule({
     declarations: [
         AppComponent,
-        SafePipe,
         PreviewComponent,
         EditorComponent,
         TerminalComponent,
@@ -88,7 +87,6 @@ import { LeftMenuComponent } from './components/left-menu/left-menu.component';
         NbButtonModule,
         NbSpinnerModule,
     ],
-    providers: [],
     bootstrap: [AppComponent],
 })
 export class AppModule {}

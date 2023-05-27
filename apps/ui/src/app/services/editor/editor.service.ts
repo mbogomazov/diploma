@@ -26,15 +26,13 @@ export class EditorService {
     setFileData(name: string, data: string) {
         this.fileData.next(data);
 
-        this.setEditorOptions(name);
+        this.setEmmetEditorOptions(name);
     }
 
-    setEditorOptions(name: string) {
+    setEmmetEditorOptions(name: string) {
         const extension = name.split('.').slice(-1).pop();
 
         if (!extension) {
-            this.options.next({ ...this.options, language: 'text' });
-
             return;
         }
 
@@ -42,7 +40,6 @@ export class EditorService {
 
         this.options.next({
             ...this.options.value,
-            ...languageOptions,
             useEmmet: languageOptions?.useEmmet ?? false,
         });
     }
