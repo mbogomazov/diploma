@@ -18,6 +18,7 @@ import { EditorComponent } from './components/editor/editor.component';
 import { TerminalComponent } from './components/terminal/terminal.component';
 import { TreeViewComponent } from './components/panels/tree-view/tree-view.component';
 import {
+    NbAccordionModule,
     NbAlertModule,
     NbButtonModule,
     NbCardModule,
@@ -71,7 +72,7 @@ import { LeftMenuComponent } from './components/left-menu/left-menu.component';
         TreeModule,
         AngularSplitModule,
 
-        NbThemeModule.forRoot({ name: 'default' }),
+        NbThemeModule.forRoot({ name: 'dark' }),
         NbMenuModule.forRoot(),
         NbDialogModule.forRoot(),
         NbToastrModule.forRoot(),
@@ -80,6 +81,7 @@ import { LeftMenuComponent } from './components/left-menu/left-menu.component';
         NbListModule,
         NbCardModule,
         NbInputModule,
+        NbAccordionModule,
         NbAlertModule,
         NbEvaIconsModule,
         NbIconModule,

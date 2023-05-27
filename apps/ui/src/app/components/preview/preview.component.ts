@@ -8,9 +8,9 @@ import {
     ViewChild,
 } from '@angular/core';
 import { BehaviorSubject, filter } from 'rxjs';
-import { WebcontainersService } from '../../services/webcontainers/webcontainers.service';
 import { FormControl } from '@angular/forms';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
+import { EditorFacadeService } from '../../facades/editor/editor-facade.service';
 
 @UntilDestroy()
 @Component({
@@ -27,15 +27,17 @@ export class PreviewComponent implements OnInit {
 
     webcontainerUrl$ = new BehaviorSubject<string | null>(null);
 
+    private readonly historyState = new BehaviorSubject<Array<string>>([]);
+
     constructor(
-        private readonly webcontainersService: WebcontainersService,
+        private readonly editorFacade: EditorFacadeService,
         private readonly renderer: Renderer2
     ) {}
 
     previewUrl = new FormControl('');
 
     ngOnInit() {
-        this.webcontainersService.containerAppUrl
+        this.editorFacade.containerAppUrl$
             .pipe(
                 filter((url): url is string => !!url),
                 untilDestroyed(this)
@@ -63,6 +65,18 @@ export class PreviewComponent implements OnInit {
                     url
                 );
             });
+    }
+
+    pushUrlToHistory() {
+        if (!this.previewContentRef) {
+            return;
+        }
+
+        console.log(
+            this.previewContentRef.nativeElement.contentWindow.location.href
+        );
+
+        // this.historyState();
     }
 
     goHistoryBack() {

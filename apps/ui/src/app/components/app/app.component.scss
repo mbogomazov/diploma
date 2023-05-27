@@ -1,5 +1,8 @@
+@import '../../themes/black.theme.scss';
+
 .layout {
     height: 100vh;
+    display: block;
 
     &-header,
     &-header ::ng-deep nav {
@@ -52,4 +55,10 @@
     // height: 100%;
     // display: block;
     width: 100%;
+}
+
+:host ::ng-deep {
+    .as-split-gutter {
+        background-color: #151a30 !important;
+    }
 }

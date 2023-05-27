@@ -1,8 +1,4 @@
 <div class="container">
-    <button nbButton ghost (click)="formatDocument()">
-        <nb-icon icon="prettier" pack="custom"></nb-icon>
-    </button>
-
     <button
         nbButton
         ghost
@@ -12,17 +8,6 @@
         nbSpinnerStatus="primary"
     >
         <nb-icon icon="save-outline"></nb-icon>
-    </button>
-
-    <button
-        nbButton
-        ghost
-        (click)="download()"
-        [nbSpinner]="false"
-        nbSpinnerSize="giant"
-        nbSpinnerStatus="primary"
-    >
-        <nb-icon icon="download-outline"></nb-icon>
     </button>
 
     <button

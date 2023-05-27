@@ -17,6 +17,13 @@
     &-header {
         display: flex;
         align-items: center;
+        justify-content: space-between;
+        height: 57px;
+
+        .left-items {
+            display: flex;
+            align-items: center;
+        }
 
         .icon {
             margin-right: 12px;

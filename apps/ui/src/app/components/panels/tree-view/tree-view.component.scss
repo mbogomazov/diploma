@@ -1,9 +1,11 @@
 .container {
     &-body {
         padding: 0 !important;
-        overflow-y: scroll;
+        overflow: scroll;
         height: 100%;
         max-height: 50vh;
+        margin-right: -5px;
+        margin-bottom: -5px;
     }
 
     &-header {
@@ -33,9 +35,15 @@
             position: absolute;
         }
 
+        .node-content-wrapper:hover {
+            background: #222b45;
+        }
+
+        .node-content-wrapper-active {
+            background: #151a30;
+        }
+
         .node-content-wrapper::before {
-            border-bottom: 1px solid lightgrey;
-            border-left: 1px solid lightgrey;
             height: 28px;
             top: -17px;
             width: 20px;

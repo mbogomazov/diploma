@@ -10,19 +10,11 @@ import { EditorFacadeService } from '../../facades/editor/editor-facade.service'
 export class HeaderComponent {
     constructor(private readonly editorFacade: EditorFacadeService) {}
 
-    formatDocument() {
-        this.editorFacade.formatDocument();
-    }
-
     saveLocal() {
         this.editorFacade.saveProjectLocally();
     }
 
-    download() {
-        //
-    }
-
     share() {
-        //
+        this.editorFacade.shareProject();
     }
 }

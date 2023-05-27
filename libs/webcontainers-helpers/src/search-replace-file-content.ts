@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import * as glob from 'libs/webcontainers-helpers/jija/node_modules/@types/glob';
+import * as glob from 'glob';
 import { SearchResult, SearchResultsByFile } from '@online-editor/types';
 
 async function searchReplace(
@@ -8,7 +8,11 @@ async function searchReplace(
     replaceText: string | null,
     context = 15
 ): Promise<SearchResultsByFile> {
-    const files = glob.sync('**', { nodir: true });
+    const files = glob.sync('**', {
+        nodir: true,
+        ignore: '**/node_modules/**',
+    });
+
     const searchResults: SearchResultsByFile = {};
 
     for (const file of files) {

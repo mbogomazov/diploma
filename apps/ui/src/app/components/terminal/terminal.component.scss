@@ -31,13 +31,14 @@
     width: 100vw;
 
     &.list-card-visible {
-        min-width: calc(100vw - 45px);
-        max-width: calc(100vw - 45px);
+        min-width: calc(100vw - 120px);
+        max-width: calc(100vw - 120px);
     }
 }
 
 .card-list {
     margin-bottom: 0;
+    min-width: 120px;
 }
 
 // terminal custom styles

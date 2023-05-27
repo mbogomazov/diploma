@@ -1,4 +1,4 @@
-<nb-card class="container">
+<nb-card class="container" #parentElem>
     <nb-card-header class="container-header">Search</nb-card-header>
     <nb-card-body
         class="container-body"
@@ -15,10 +15,41 @@
             />
         </form>
 
-        <nb-list *ngIf="">
-            <nb-list-item *ngFor="let result of results | async">
-                <span>{{ result }}</span>
-            </nb-list-item>
-        </nb-list>
+        <nb-accordion
+            class="accordion"
+            multi
+            *ngIf="(resultsLength$ | async) !== 0; else noResults"
+        >
+            <nb-accordion-item *ngFor="let result of results | async">
+                <nb-accordion-item-header>
+                    {{ result[0] }}
+                </nb-accordion-item-header>
+
+                <nb-accordion-item-body class="item-body-container">
+                    <nb-list>
+                        <nb-list-item *ngFor="let lineResult of result[1]">
+                            <div
+                                (click)="
+                                    openSearchResult(result[0], lineResult)
+                                "
+                                class="item-content"
+                            >
+                                {{ lineResult.content[0] }}
+
+                                <span class="highlight">
+                                    {{ lineResult.content[1] }}</span
+                                >
+
+                                {{ lineResult.content[2] }}
+                            </div>
+                        </nb-list-item>
+                    </nb-list>
+                </nb-accordion-item-body>
+            </nb-accordion-item>
+        </nb-accordion>
+
+        <ng-template #noResults>
+            <p *ngIf="true" class="no-results">No results found</p>
+        </ng-template>
     </nb-card-body>
 </nb-card>

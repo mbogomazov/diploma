@@ -74,4 +74,6 @@ export class TerminalComponent implements AfterViewInit {
 
         console.log(this.child.underlying.textarea?.value);
     }
+
+    removeShell() {}
 }
