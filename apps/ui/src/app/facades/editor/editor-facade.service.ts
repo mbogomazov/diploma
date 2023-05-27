@@ -10,7 +10,6 @@ import {
     switchMap,
     tap,
 } from 'rxjs';
-import { ITreeNode } from '@circlon/angular-tree-component/lib/defs/api';
 import { EditorService } from '../../services/editor/editor.service';
 import { TerminalService } from '../../services/terminal/terminal.service';
 import {
@@ -21,12 +20,12 @@ import {
 import { ErrorDialogComponent } from '../../components/dialogs/error/error-dialog.component';
 import { FileStorageService } from '../../services/files-storage/files-storage.service';
 import { RestoreProjectDialogComponent } from '../../components/dialogs/restore-project-dialog/restore-project-dialog.component';
-import { parse } from 'comment-json';
 import { TaskService } from '../../services/task/task.service';
 import { DirectoryNode, FileNode } from '@online-editor/types';
-import { NgxEditorModel } from 'ngx-monaco-editor-emmet';
+import { editor } from 'monaco-editor';
 
-declare const monaco: any;
+import { MonacoAutocompleteCodeAction } from '../../services/monaco-helper/monaco-helper.consts';
+import { MonacoHelperService } from '../../services/monaco-helper/monaco-helper.service';
 
 @Injectable({
     providedIn: 'root',
@@ -40,22 +39,24 @@ export class EditorFacadeService {
     private readonly currentOpenedFilePath = new BehaviorSubject<string | null>(
         null
     );
-    private readonly currentModel = new BehaviorSubject<NgxEditorModel | null>(
-        null
-    );
+
+    private containerAppUrl = new BehaviorSubject<string | null>(null);
 
     readonly currentOpenedDirectoryPath = new BehaviorSubject<string>('');
 
     readonly nodes$ = this.nodes.asObservable();
     readonly options$ = this.editorService.options$;
     readonly fileData$ = this.editorService.fileData$;
-    readonly monacoEditorInstance = new BehaviorSubject<any | null>(null);
+    readonly monacoEditorInstance =
+        new BehaviorSubject<editor.IStandaloneCodeEditor | null>(null);
     readonly currentOpenedFilePath$ = this.currentOpenedFilePath.asObservable();
     readonly currentOpenedDirectoryPath$ =
         this.currentOpenedDirectoryPath.asObservable();
-    readonly currentModel$ = this.currentModel.asObservable();
+    readonly searchFileContentResult$ =
+        this.webcontainersService.searchFileContentResult$;
 
     readonly loading$ = this.loading.asObservable();
+    readonly containerAppUrl$ = this.containerAppUrl.asObservable();
 
     constructor(
         private readonly webcontainersService: WebcontainersService,
@@ -64,11 +65,13 @@ export class EditorFacadeService {
         private readonly dialogService: NbDialogService,
         private readonly toastrService: NbToastrService,
         private readonly fileStorageService: FileStorageService,
-        private readonly taskService: TaskService
+        private readonly taskService: TaskService,
+        private readonly monacoHelperService: MonacoHelperService
     ) {}
 
     boot() {
         return this.webcontainersService.boot().pipe(
+            tap((url) => this.containerAppUrl.next(url)),
             mergeMap(() => this.terminalService.addShell()),
             tap(() => this.terminalService.selectShell(0)),
             tap(() => this.loading.next(false)),
@@ -104,94 +107,63 @@ export class EditorFacadeService {
         );
     }
 
+    watchFileChanges() {
+        return this.webcontainersService.watchFileChanges();
+    }
+
     updateFileSystemStructure(directoryNode: DirectoryNode) {
         this.nodes.next(directoryNode.children);
     }
 
-    onFileActivated(node: ITreeNode) {
-        const { name, path } = node.data as {
-            name: string;
-            path: string;
-        };
+    openFile(filePath: string, lineNumber?: number) {
+        const fileName = this.getFileName(filePath);
 
-        this.currentOpenedFilePath.next(path);
+        if (!fileName) {
+            return;
+        }
+
+        this.currentOpenedFilePath.next(filePath);
+
         this.currentOpenedDirectoryPath.next(
-            path.split('/').slice(0, -1).join('/')
+            this.getOpenedDirectoryPath(filePath)
         );
 
-        this.webcontainersService.readFile(path).subscribe((data) => {
-            const extension = name.split('.').slice(-1).pop();
-
-            if (!extension) {
-                return;
-            }
-
-            if (['ts', 'tsx'].includes(extension)) {
-                // const currentDirectoryPath = path
-                //     .split('/')
-                //     .slice(0, -1)
-                //     .join('/');
-                // this.findNearestTsconfig(currentDirectoryPath);
-            }
-
-            const model = monaco.editor.getModel(monaco.Uri.file(path));
-
-            const editorInstance = this.monacoEditorInstance.value;
-
-            if (!model || !editorInstance) {
-                this.editorService.setFileData(name, data);
-
-                return;
-            }
-
-            // update model value by opened file data
-            model.setValue(data);
-
-            editorInstance.setModel(model);
-
-            const editorService = editorInstance._codeEditorService;
-
-            const openEditorBase =
-                editorService.openCodeEditor.bind(editorService);
-
-            // TODO: refactor it
-            editorService.openCodeEditor = async (
-                input: { resource: any },
-                source: any
-            ) => {
-                const result = await openEditorBase(input, source);
-
-                if (result === null) {
-                    // console.log("Open definition for:", input);
-                    // console.log("Corresponding model:", monaco.editor.getModel(input.resource));
-                    const model = monaco.editor.getModel(input.resource);
-                    editorInstance.setModel(model);
-                }
-
-                return result; // always return the base result
-            };
-        });
+        this.webcontainersService
+            .readFile(filePath)
+            .pipe(
+                mergeMap((fileData) =>
+                    this.monacoHelperService.openFileAtSpecificLine(
+                        fileName,
+                        filePath,
+                        fileData,
+                        this.monacoEditorInstance.value,
+                        lineNumber
+                    )
+                ),
+                tap(() => this.restoreFileState(filePath))
+            )
+            .subscribe();
     }
 
     writeEditingFile(value: string) {
         if (!this.currentOpenedFilePath.value) {
-            return;
+            return EMPTY;
         }
 
-        this.webcontainersService.writeFile(
-            this.currentOpenedFilePath.value,
-            value
-        );
+        return this.webcontainersService
+            .writeFile(this.currentOpenedFilePath.value, value)
+            .pipe(
+                tap(() => {
+                    if (!this.currentOpenedFilePath.value) {
+                        return;
+                    }
 
-        const model = monaco.editor.getModel(
-            monaco.Uri.file(this.currentOpenedFilePath.value)
-        );
-
-        if (!model) {
-            return;
-        }
-
-        model.setValue(value);
+                    this.monacoHelperService.updateModel(
+                        this.currentOpenedFilePath.value,
+                        value
+                    );
+                })
+            );
     }
 
     formatDocument() {
@@ -201,7 +173,7 @@ export class EditorFacadeService {
             return;
         }
 
-        editorInstance.getAction('editor.action.formatDocument').run();
+        this.monacoHelperService.formatDocument(editorInstance);
     }
 
     saveProjectLocally() {
@@ -223,16 +195,74 @@ export class EditorFacadeService {
             .subscribe();
     }
 
-    getCodeAutocompletion(codePiece: string, lineNumber: number) {
-        this.taskService
-            .createTaskForCodeAutocompletion(codePiece)
+    getCodeAutocompletion({
+        selectedCode,
+        lineNumber,
+    }: MonacoAutocompleteCodeAction) {
+        return this.taskService
+            .createTaskForCodeAutocompletion(selectedCode)
             .pipe(
                 switchMap(({ id }) => this.taskService.getTaskStatus(id)),
                 map(({ result }) =>
-                    this.pasteResultToEditor(result, lineNumber)
+                    this.pasteAutocompleteResultToEditor(result, lineNumber)
                 )
-            )
+            );
+    }
+
+    teardownWebcontainers() {
+        this.webcontainersService.teardown();
+    }
+
+    searchFileContent(searchingFileContent: string) {
+        return this.webcontainersService.searchFileContent(
+            searchingFileContent
+        );
+    }
+
+    updateFileState(filePath?: string) {
+        const path = filePath ?? this.currentOpenedFilePath.value;
+
+        if (!this.monacoEditorInstance.value || !path) {
+            return;
+        }
+
+        this.monacoHelperService.updateFileState(
+            path,
+            this.monacoEditorInstance.value
+        );
+    }
+
+    restoreFileState(filePath?: string) {
+        const path = filePath ?? this.currentOpenedFilePath.value;
+
+        if (!this.monacoEditorInstance.value || !path) {
+            return;
+        }
+
+        this.monacoHelperService.restoreFileState(
+            path,
+            this.monacoEditorInstance.value
+        );
+    }
+
+    shareProject() {
+        const rootDirectories = this.nodes.value.filter(
+            (node): node is DirectoryNode =>
+                node.name !== 'node_modules' && 'children' in node
+        );
+
+        this.fileStorageService
+            .getProjectDataAsZip(rootDirectories)
+            .pipe()
             .subscribe();
+    }
+
+    private getFileName(filePath: string) {
+        return filePath.split('/').pop();
+    }
+
+    private getOpenedDirectoryPath(filePath: string) {
+        return filePath.split('/').slice(0, -1).join('/');
     }
 
     // TODO: refactor
@@ -266,90 +296,20 @@ export class EditorFacadeService {
             .subscribe();
     }
 
-    // private findNearestTsconfig(directoryPath: string) {
-    //     const currentPath = directoryPath.split('/');
-
-    //     if (currentPath.length <= 0) {
-    //         return;
-    //     }
-
-    //     const potentialTsconfigPath = [...currentPath, 'tsconfig.json'].join(
-    //         '/'
-    //     );
-
-    //     this.webcontainersService
-    //         .readFile(potentialTsconfigPath)
-    //         .pipe(
-    //             catchError((error) => {
-    //                 if (
-    //                     !error.message.includes(
-    //                         'ENOENT: no such file or directory, open'
-    //                     )
-    //                 ) {
-    //                     return throwError(() => error.message);
-    //                 }
-
-    //                 currentPath.pop();
-
-    //                 this.findNearestTsconfig(currentPath.join('/'));
-
-    //                 return EMPTY;
-    //             })
-    //         )
-    //         .subscribe((tsConfigFileData) => {
-    //             const tsConfigOptions: any | null = parse(tsConfigFileData);
-
-    //             if (!tsConfigOptions) {
-    //                 return;
-    //             }
-
-    //             const editorInstance = this.monacoEditorInstance.value;
-
-    //             if (!editorInstance) {
-    //                 return;
-    //             }
-
-    //             monaco.languages.typescript.typescriptDefaults.setCompilerOptions(
-    //                 {
-    //                     target: monaco.languages.typescript.ScriptTarget.ES2016,
-    //                     allowNonTsExtensions: true,
-    //                     moduleResolution:
-    //                         monaco.languages.typescript.ModuleResolutionKind
-    //                             .NodeJs,
-    //                     module: monaco.languages.typescript.ModuleKind.CommonJS,
-    //                     noEmit: true,
-    //                     typeRoots: ['node_modules/@types'],
-    //                     baseUrl: './',
-    //                 }
-    //             );
-
-    //             monaco.languages.typescript.javascriptDefaults.setEagerModelSync(
-    //                 true
-    //             );
-
-    //             monaco.languages.typescript.typescriptDefaults.setEagerModelSync(
-    //                 true
-    //             );
-    //         });
-    // }
-
-    pasteResultToEditor(result: string, lineNumber: number) {
-        const range = new monaco.Range(lineNumber, 1, lineNumber, 1);
-
-        const edits = [
-            {
-                range: range,
-                text: result,
-                forceMoveMarkers: true,
-            },
-        ];
-
+    private pasteAutocompleteResultToEditor(
+        result: string,
+        lineNumber: number
+    ) {
         const editorInstance = this.monacoEditorInstance.value;
 
         if (!editorInstance) {
             return;
         }
 
-        editorInstance.executeEdits('my-source', edits);
+        this.monacoHelperService.pasteAutocompleteResultToEditor(
+            result,
+            lineNumber,
+            editorInstance
+        );
     }
 }

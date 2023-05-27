@@ -2,6 +2,7 @@ import {
     ChangeDetectionStrategy,
     Component,
     HostListener,
+    OnDestroy,
     OnInit,
 } from '@angular/core';
 import { BehaviorSubject, take } from 'rxjs';
@@ -17,7 +18,7 @@ import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
     providers: [{ provide: Window, useValue: window }],
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, OnDestroy {
     readonly loading$ = this.editorFacade.loading$;
 
     readonly webcontainerUrl$ = new BehaviorSubject<string | null>(null);
@@ -49,5 +50,9 @@ export class AppComponent implements OnInit {
             .boot()
             .pipe(take(1), untilDestroyed(this))
             .subscribe();
+    }
+
+    ngOnDestroy() {
+        this.editorFacade.teardownWebcontainers();
     }
 }

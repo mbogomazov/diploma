@@ -5,15 +5,22 @@ import {
     OnInit,
 } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
-import { debounceTime, filter, map, tap } from 'rxjs';
+import {
+    debounceTime,
+    distinctUntilChanged,
+    filter,
+    map,
+    mergeMap,
+    take,
+    tap,
+} from 'rxjs';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
+import { editor } from 'monaco-editor';
 
 import { EditorFacadeService } from '../../facades/editor/editor-facade.service';
 import { WebcontainersService } from '../../services/webcontainers/webcontainers.service';
 import { MonacoHelperService } from '../../services/monaco-helper/monaco-helper.service';
-import { FileModelUpdate } from '@online-editor/types';
-
-declare const monaco: any;
+import { MonacoAutocompleteCodeAction } from '../../services/monaco-helper/monaco-helper.consts';
 
 @UntilDestroy()
 @Component({
@@ -33,10 +40,8 @@ export class EditorComponent implements OnInit {
     readonly options$ = this.editorFacade.options$;
 
     readonly openedFileName = this.editorFacade.currentOpenedFilePath$.pipe(
-        map((filepath) => (filepath ? filepath.split('/').slice(-1) : '...'))
+        map((filepath) => (filepath ? filepath.split('/').slice(-1) : ' '))
     );
-
-    readonly currentModel$ = this.editorFacade.currentModel$;
 
     get editorControl() {
         return this.form.controls.editor;
@@ -54,11 +59,13 @@ export class EditorComponent implements OnInit {
             .pipe(
                 filter((value): value is string => !!value),
                 debounceTime(500),
+                distinctUntilChanged(),
+                tap(() => this.editorFacade.updateFileState()),
+                mergeMap((value) => this.editorFacade.writeEditingFile(value)),
+                tap(() => this.editorFacade.restoreFileState()),
                 untilDestroyed(this)
             )
-            .subscribe((value) => {
-                this.editorFacade.writeEditingFile(value);
-            });
+            .subscribe();
 
         this.editorFacade.fileData$
             .pipe(untilDestroyed(this))
@@ -68,78 +75,45 @@ export class EditorComponent implements OnInit {
             if ((e.metaKey || e.ctrlKey) && e.key === 's') {
                 e.preventDefault();
 
-                this.editorFacade.writeEditingFile(this.editorControl.value);
+                this.editorFacade
+                    .writeEditingFile(this.editorControl.value)
+                    .pipe(take(1), untilDestroyed(this))
+                    .subscribe();
             }
         });
     }
 
-    onEditorInit(editorInstance: any) {
+    onEditorInit(editorInstance: editor.IStandaloneCodeEditor) {
         this.editorFacade.monacoEditorInstance.next(editorInstance);
 
-        this.addCodeAutocompleteAction();
+        // this.webcontainersService.monacoModelsChanges$
+        //     .pipe(
+        //         filter((updates): updates is FileModelUpdate => !!updates),
+        //         tap((updates) =>
+        //             this.monacoHelperService.processModelsUpdate(updates)
+        //         ),
+        //         untilDestroyed(this)
+        //     )
+        //     .subscribe();
 
-        this.webcontainersService.monacoModelsChanges$
+        this.monacoHelperService.setupMonacoHelpers(
+            this.editorFacade.monacoEditorInstance.value
+        );
+
+        this.monacoHelperService.autocompleteAction$
             .pipe(
                 filter(
-                    (updates): updates is Array<FileModelUpdate> => !!updates
+                    (action): action is MonacoAutocompleteCodeAction => !!action
                 ),
-                tap((updates) =>
-                    this.monacoHelperService.processModelsUpdate(updates)
+                mergeMap((action) =>
+                    this.editorFacade.getCodeAutocompletion(action)
                 ),
                 untilDestroyed(this)
             )
             .subscribe();
-
-        monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
-            target: monaco.languages.typescript.ScriptTarget.ES2016,
-            allowNonTsExtensions: true,
-            moduleResolution:
-                monaco.languages.typescript.ModuleResolutionKind.NodeJs,
-            module: monaco.languages.typescript.ModuleKind.CommonJS,
-            noEmit: true,
-            typeRoots: ['node_modules/@types'],
-            baseUrl: './',
-        });
-
-        monaco.languages.typescript.javascriptDefaults.setEagerModelSync(true);
-
-        monaco.languages.typescript.typescriptDefaults.setEagerModelSync(true);
     }
 
-    private addCodeAutocompleteAction() {
-        const KeyCode = monaco.KeyCode;
-
-        monaco.editor.addEditorAction({
-            id: 'autocomplete-code',
-            label: 'Autocomplete code',
-            keybindings: [monaco.KeyMod.CtrlCmd | KeyCode.Enter],
-            precondition: null,
-            keybindingContext: null,
-            contextMenuOrder: 2,
-            contextMenuGroupId: '1_modification',
-
-            run: (ed: any) => {
-                const selection = ed.getSelection();
-                const model = ed.getModel();
-
-                const lineNumber = selection.startLineNumber;
-
-                if (selection && model.getValueInRange(selection)) {
-                    this.editorFacade.getCodeAutocompletion(
-                        model.getValueInRange(selection),
-                        lineNumber + 1
-                    );
-
-                    return null;
-                }
-
-                this.editorFacade.getCodeAutocompletion(
-                    model.getLineContent(lineNumber),
-                    lineNumber + 1
-                );
-
-                return null;
-            },
-        });
+    formatDocument() {
+        this.editorFacade.formatDocument();
     }
 }

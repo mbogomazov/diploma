@@ -11,18 +11,14 @@ import {
     forkJoin,
     map,
     mergeMap,
+    switchMap,
     take,
     tap,
     throwError,
 } from 'rxjs';
 import { setupPackageJson } from '../files/files.setup';
 import { HttpClient } from '@angular/common/http';
-import {
-    DirectoryNode,
-    FileModelUpdate,
-    SearchResultsByFile,
-} from '@online-editor/types';
-import { JsonParseService } from '../json-parse/json-parse.service';
+import { DirectoryNode, SearchResultsByFile } from '@online-editor/types';
 
 @Injectable({
     providedIn: 'root',
@@ -42,25 +38,22 @@ export class WebcontainersService {
         new BehaviorSubject<DirectoryNode | null>(null);
 
     private readonly searchFileContentResult =
-        new BehaviorSubject<Array<SearchResultsByFile> | null>(null);
+        new BehaviorSubject<SearchResultsByFile | null>(null);
 
-    private readonly monacoModelsChanges =
-        new BehaviorSubject<Array<FileModelUpdate> | null>(null);
+    private readonly monacoModelsChanges = new BehaviorSubject<string | null>(
+        null
+    );
+
+    private readonly containerAppUrl = new BehaviorSubject<string | null>(null);
 
     private helperScriptsFileContents: string[] = [];
 
-    readonly containerAppUrl = new BehaviorSubject<string | null>(null);
     readonly inputTerminalPrompt = new BehaviorSubject<string | null>(null);
 
-    readonly fileSystemChanges$ = this.fileSystemChanges.asObservable();
     readonly searchFileContentResult$ =
         this.searchFileContentResult.asObservable();
-    readonly monacoModelsChanges$ = this.monacoModelsChanges.asObservable();
 
-    constructor(
-        private readonly http: HttpClient,
-        private readonly jsonParseServer: JsonParseService
-    ) {}
+    constructor(private readonly http: HttpClient) {}
 
     boot() {
         return this.getHelpersFiles().pipe(
@@ -101,8 +94,6 @@ export class WebcontainersService {
                 )
             ),
             concatMap(() => this.moveHelperScripts()),
-            concatMap(() => this.watchFileChanges()),
-            // concatMap(() => this.watchCodeFilesChangesForMonaco()),
             tap(() => {
                 this.webcontainerInstance?.on('server-ready', (port, url) => {
                     this.containerAppUrl.next(url);
@@ -113,7 +104,8 @@ export class WebcontainersService {
 
                     return throwError(() => new Error(error.message));
                 });
-            })
+            }),
+            switchMap(() => this.containerAppUrl)
         );
     }
 
@@ -164,27 +156,6 @@ export class WebcontainersService {
         );
     }
 
-    private moveHelperScripts() {
-        return forkJoin(
-            this.helperScriptsfileNames.map((scriptFileName) =>
-                this.moveHelperScriptFile(scriptFileName)
-            )
-        ).pipe(
-            tap(() => {
-                this.helperScriptsFileContents = [];
-            })
-        );
-    }
-
-    private moveHelperScriptFile(fileName: string) {
-        return defer(() =>
-            this.webcontainerInstance.spawn('mv', [
-                `.${fileName}`,
-                '../../usr/local/lib/',
-            ])
-        ).pipe(take(1));
-    }
-
     searchFileContent(search: string) {
         return defer(() =>
             this.webcontainerInstance.spawn('node', [
@@ -205,7 +176,11 @@ export class WebcontainersService {
         );
     }
 
-    private watchFileChanges() {
+    teardown() {
+        this.webcontainerInstance.teardown();
+    }
+
+    watchFileChanges() {
         return defer(() =>
             this.webcontainerInstance.spawn('node', [
                 '../../usr/local/lib/.chokidar',
@@ -215,68 +190,63 @@ export class WebcontainersService {
                 shellProcess.output.pipeTo(
                     new WritableStream({
                         write: (data) => {
-                            console.log('Watch all file changes');
-
                             try {
-                                this.jsonParseServer
-                                    .parseJson(data)
-                                    .subscribe((rootFileSystemStructure) => {
-                                        this.fileSystemChanges.next(
-                                            rootFileSystemStructure as DirectoryNode
-                                        );
-                                    });
+                                console.log('Watch file changes');
+
+                                this.fileSystemChanges.next(JSON.parse(data));
                             } catch (error) {
                                 console.error(error);
                             }
                         },
-                        close() {
-                            console.log('Sink closed');
-                        },
-                        abort(err) {
-                            console.log('Sink error:', err);
-                        },
                     })
                 );
             }),
-            take(1)
+            switchMap(() => this.fileSystemChanges.asObservable())
         );
     }
 
-    private watchCodeFilesChangesForMonaco() {
+    getNpmPackagePath(filepath: string, npmpackage: string) {
         return defer(() =>
             this.webcontainerInstance.spawn('node', [
                 '../../usr/local/lib/.monaco-models-watcher',
+                filepath,
+                npmpackage,
             ])
         ).pipe(
             tap((shellProcess) => {
                 shellProcess.output.pipeTo(
                     new WritableStream({
                         write: (data) => {
-                            console.log('Watch code files changes');
+                            console.log(data);
 
-                            try {
-                                this.jsonParseServer
-                                    .parseJson(data)
-                                    .subscribe((fileModelUpdate) => {
-                                        this.monacoModelsChanges.next(
-                                            fileModelUpdate as Array<FileModelUpdate>
-                                        );
-                                    });
-                            } catch (error) {
-                                console.error(error);
-                            }
-                        },
-                        close() {
-                            console.log('Sink closed');
-                        },
-                        abort(err) {
-                            console.log('Sink error:', err);
+                            this.monacoModelsChanges.next(data);
                         },
                     })
                 );
             }),
-            take(1)
+            switchMap(() => this.monacoModelsChanges.asObservable())
         );
+    }
+
+    private moveHelperScripts() {
+        return forkJoin(
+            this.helperScriptsfileNames.map((scriptFileName) =>
+                this.moveHelperScriptFile(scriptFileName)
+            )
+        ).pipe(
+            tap(() => {
+                this.helperScriptsFileContents = [];
+            })
+        );
+    }
+
+    private moveHelperScriptFile(fileName: string) {
+        return defer(() =>
+            this.webcontainerInstance.spawn('mv', [
+                `.${fileName}`,
+                '../../usr/local/lib/',
+            ])
+        ).pipe(take(1));
     }
 
     private getHelpersFiles(): Observable<[string, string]> {

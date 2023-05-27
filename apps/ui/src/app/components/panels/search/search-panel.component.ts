@@ -1,9 +1,26 @@
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import {
+    AfterContentInit,
+    AfterViewInit,
+    ChangeDetectionStrategy,
+    ChangeDetectorRef,
+    Component,
+    ElementRef,
+    OnInit,
+    ViewChild,
+} from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
-import { BehaviorSubject, debounceTime, filter, mergeMap, tap } from 'rxjs';
+import {
+    BehaviorSubject,
+    debounceTime,
+    filter,
+    map,
+    mergeMap,
+    tap,
+} from 'rxjs';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
-import { WebcontainersService } from '../../../services/webcontainers/webcontainers.service';
-import { SearchResultsByFile } from '@online-editor/types';
+import { SearchResult, SearchResultsByFile } from '@online-editor/types';
+
+import { EditorFacadeService } from '../../../facades/editor/editor-facade.service';
 
 @UntilDestroy()
 @Component({
@@ -12,11 +29,26 @@ import { SearchResultsByFile } from '@online-editor/types';
     styleUrls: ['./search-panel.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SearchPanelComponent implements OnInit {
-    readonly results = new BehaviorSubject<string | null>(null);
+export class SearchPanelComponent implements OnInit, AfterContentInit {
+    @ViewChild('parentElem', { read: ElementRef })
+    private parentTreeElem?: ElementRef;
+
+    readonly results = new BehaviorSubject<Array<
+        [string, Array<SearchResult>]
+    > | null>(null);
+
     readonly loading = new BehaviorSubject<boolean>(false);
 
-    constructor(private readonly webcontainersService: WebcontainersService) {}
+    readonly resultsLength$ = this.results.pipe(
+        map((value) => (value ? Object.keys(value).length : 0))
+    );
+
+    readonly bodyContainerHeight = new BehaviorSubject<number | null>(null);
+
+    constructor(
+        private readonly editorFacade: EditorFacadeService,
+        private readonly changeDetectorRef: ChangeDetectorRef
+    ) {}
 
     form = new FormGroup({
         search: new FormControl(),
@@ -27,25 +59,41 @@ export class SearchPanelComponent implements OnInit {
         this.form.controls.search.valueChanges
             .pipe(
                 filter((value): value is string => !!value),
-                debounceTime(500),
+                debounceTime(1000),
                 tap(() => this.loading.next(true)),
-                mergeMap((value) =>
-                    this.webcontainersService.searchFileContent(value)
+                mergeMap((searchingFileContent) =>
+                    this.editorFacade.searchFileContent(searchingFileContent)
                 ),
                 untilDestroyed(this)
             )
             .subscribe();
 
-        this.webcontainersService.searchFileContentResult$
+        this.editorFacade.searchFileContentResult$
             .pipe(
-                filter(
-                    (result): result is Array<SearchResultsByFile> => !!result
-                ),
+                filter((result): result is SearchResultsByFile => !!result),
                 untilDestroyed(this)
             )
             .subscribe((value) => {
                 this.loading.next(false);
-                console.log(value);
+
+                this.results.next(Object.entries(value));
             });
+    }
+
+    ngAfterContentInit() {
+        if (!this.parentTreeElem) {
+            return;
+        }
+
+        this.bodyContainerHeight.next(
+            // parent container - header height + padding
+            this.parentTreeElem.nativeElement.clientHeight - 57 + 5
+        );
+
+        this.changeDetectorRef.detectChanges();
+    }
+
+    openSearchResult(filePath: string, selectedSearchResult: SearchResult) {
+        this.editorFacade.openFile(filePath, selectedSearchResult.line);
     }
 }

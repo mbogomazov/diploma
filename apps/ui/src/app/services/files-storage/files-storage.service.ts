@@ -1,9 +1,10 @@
 import { Injectable } from '@angular/core';
 import { DBConfig, NgxIndexedDBService } from 'ngx-indexed-db';
-import { EMPTY, Observable, from } from 'rxjs';
-import { switchMap, mergeMap } from 'rxjs/operators';
+import { EMPTY, Observable, defer, from } from 'rxjs';
+import { switchMap, mergeMap, map } from 'rxjs/operators';
 import { WebcontainersService } from '../webcontainers/webcontainers.service';
 import { DirectoryNode, FileNode } from '@online-editor/types';
+import * as JSZip from 'jszip';
 
 export const fileDbConfig: DBConfig = {
     name: 'FileDb',
@@ -64,7 +65,6 @@ export class FileStorageService {
     }
 
     clearFiles() {
-        // return this.dbService.deleteDatabase()
         return this.dbService.clear('files');
     }
 
@@ -126,6 +126,24 @@ export class FileStorageService {
         );
     }
 
+    getProjectDataAsZip(rootDirectories: Array<DirectoryNode>) {
+        return this.getAllFiles().pipe(
+            map((files) => this.getBlob(files)),
+            map((blob) => [
+                this.getBlob(this.getAllDirectories(rootDirectories)),
+                blob,
+            ]),
+            mergeMap(([directories, files]) => {
+                const zip = new JSZip();
+
+                zip.file('directories.json', directories);
+                zip.file('files.json', files);
+
+                return defer(() => zip.generateAsync({ type: 'blob' }));
+            })
+        );
+    }
+
     private getDirectoriesOnly(node: DirectoryNode): DirectoryNode {
         return {
             ...node,
@@ -167,5 +185,11 @@ export class FileStorageService {
         for (const child of curDirectory.children) {
             this.dfs(directories, child as DirectoryNode);
         }
+    }
+
+    private getBlob(data: any) {
+        return new Blob([JSON.stringify(data)], {
+            type: 'application/json',
+        });
     }
 }

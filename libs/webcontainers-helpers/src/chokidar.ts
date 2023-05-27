@@ -19,7 +19,7 @@ export const debounce = (func: () => void, delay = 1000) => {
 
 const watcher = chokidar.watch('**/*', {
     persistent: true,
-    interval: 1000,
+    interval: 100,
     ignored: ['**/node_modules/**', '**/.git/**'],
 });
 
@@ -30,7 +30,7 @@ watcher.on('all', () => {
         }) as DirectoryNode;
 
         console.log(JSON.stringify(sortNodes([rootDirNode])[0]));
-    }, 1000);
+    }, 100);
 });
 
 const sortNodes = (

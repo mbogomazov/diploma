@@ -2,10 +2,17 @@
     <as-split direction="horizontal" [gutterSize]="2" unit="percent">
         <as-split-area>
             <nb-card class="editor-card-container">
-                <nb-card-header class="editor-card-container-header"
-                    ><nb-icon class="icon" icon="code-outline"></nb-icon
-                    >{{ openedFileName | async }}</nb-card-header
-                >
+                <nb-card-header class="editor-card-container-header">
+                    <div class="left-items">
+                        <nb-icon class="icon" icon="code-outline"></nb-icon>
+
+                        {{ openedFileName | async }}
+                    </div>
+
+                    <button nbButton ghost (click)="formatDocument()">
+                        <nb-icon icon="prettier" pack="custom"></nb-icon>
+                    </button>
+                </nb-card-header>
                 <nb-card-body class="editor-card-container-body">
                     <form class="editor" [formGroup]="form">
                         <ngx-monaco-editor

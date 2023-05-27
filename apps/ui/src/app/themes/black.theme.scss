@@ -1,0 +1,33 @@
+@forward '@nebular/theme/styles/theming';
+@use '@nebular/theme/styles/theming' as *;
+@use '@nebular/theme/styles/themes/dark';
+
+// Define your theme colors
+$black: #181818;
+$white: #fff;
+$border: rgb(129, 119, 106);
+$dark_gray: rgb(18, 20, 20);
+
+// Define your theme
+$nb-themes: nb-register-theme(
+    (
+        color-primary-100: $dark_gray,
+        color-primary-200: $dark_gray,
+        color-primary-300: $dark_gray,
+        color-primary-400: $dark_gray,
+        color-primary-500: $dark_gray,
+        color-primary-600: $dark_gray,
+        color-primary-700: $dark_gray,
+        color-primary-800: $dark_gray,
+        color-primary-900: $dark_gray,
+
+        background-basic-color-1: $black,
+        background-basic-color-2: $black,
+        background-basic-color-3: $black,
+        text-basic-color: $white,
+
+        card-border-color: $border,
+    ),
+    black,
+    dark
+);

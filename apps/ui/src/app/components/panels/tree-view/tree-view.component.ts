@@ -24,7 +24,6 @@ import {
     take,
     tap,
 } from 'rxjs';
-import { TreeComponent } from '@circlon/angular-tree-component';
 import { EditorFacadeService } from '../../../facades/editor/editor-facade.service';
 import { NbDialogService } from '@nebular/theme';
 import { AddFileFolderComponent } from '../../dialogs/add-file-folder/add-file-folder.component';
@@ -68,14 +67,16 @@ export class TreeViewComponent implements OnInit, AfterViewInit {
     ) {}
 
     ngOnInit() {
-        this.webcontainersService.fileSystemChanges$
+        this.editorFacadeService
+            .watchFileChanges()
             .pipe(
                 filter((data): data is DirectoryNode => !!data),
+                tap((data) =>
+                    this.editorFacadeService.updateFileSystemStructure(data)
+                ),
                 untilDestroyed(this)
             )
-            .subscribe((data) => {
-                this.editorFacadeService.updateFileSystemStructure(data);
-            });
+            .subscribe();
     }
 
     ngAfterViewInit() {
@@ -84,8 +85,8 @@ export class TreeViewComponent implements OnInit, AfterViewInit {
         }
 
         this.bodyContainerHeight.next(
-            // parent container - header height
-            this.parentTreeElem.nativeElement.clientHeight - 57
+            // parent container - header height + padding
+            this.parentTreeElem.nativeElement.clientHeight - 57 + 5
         );
 
         this.changeDetectorRef.detectChanges();
@@ -102,13 +103,13 @@ export class TreeViewComponent implements OnInit, AfterViewInit {
             return;
         }
 
-        this.editorFacadeService.currentOpenedDirectoryPath.next(
-            node.data.path.split('/').slice(0, -1).join('/')
-        );
-
         this.editingNode = node;
 
-        this.editorFacadeService.onFileActivated(node);
+        const { path } = node.data as {
+            path: string;
+        };
+
+        this.editorFacadeService.openFile(path);
     }
 
     addFile() {

@@ -9,7 +9,7 @@ import {
     take,
     tap,
 } from 'rxjs';
-import { WebContainer, WebContainerProcess } from '@webcontainer/api';
+import { WebContainerProcess } from '@webcontainer/api';
 import { clearString } from '../../helpers/helpers';
 
 const TERMINAL_OUTPUT_LIMIT = 100000;

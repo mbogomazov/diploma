@@ -6,22 +6,6 @@
         <nb-card class="preview-header-menu">
             <nb-card-body class="preview-header-menu-body">
                 <div class="icons">
-                    <button
-                        class="icon-btn"
-                        nbButton
-                        ghost
-                        (click)="goHistoryBack()"
-                    >
-                        <nb-icon icon="arrow-ios-back-outline"></nb-icon>
-                    </button>
-                    <button
-                        class="icon-btn"
-                        nbButton
-                        ghost
-                        (click)="goHistoryForward()"
-                    >
-                        <nb-icon icon="arrow-ios-forward-outline"></nb-icon>
-                    </button>
                     <button class="icon-btn" nbButton ghost (click)="reload()">
                         <nb-icon icon="sync"></nb-icon>
                     </button>
@@ -33,9 +17,9 @@
         <iframe
             #previewContent
             class="preview"
-            allow="geolocation; microphone; camera; payment; autoplay; cross-origin-isolated"
+            allow="geolocation; microphone; camera; payment; autoplay; serial; cross-origin-isolated"
             frameborder="0"
-            onLoad="console.log(this.contentWindow.location);"
+            (onLoad)="pushUrlToHistory()"
         ></iframe>
         <div
             [hidden]="showIframeHider === false"

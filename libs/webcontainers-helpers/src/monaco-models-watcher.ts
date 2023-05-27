@@ -1,91 +1,62 @@
-import { FileLanguage, FileModelUpdate } from '@online-editor/types';
-import * as chokidar from 'chokidar';
-import * as fs from 'fs';
 import * as path from 'path';
+import * as fs from 'fs';
 
-let timerId: NodeJS.Timeout | null = null;
+async function getTypingsPath(
+    importingFilePath: string,
+    packageName: string
+): Promise<string | null> {
+    let currentDir = path.dirname(importingFilePath);
 
-const watcher = chokidar.watch(
-    ['**/*.ts', '**/*.js', '**/*.json'],
-    // '**/node_modules/**/index.d.ts'
-    {
-        ignored: /(^|[\/\\])\../,
-        persistent: true,
-        interval: 1000,
-    }
-);
+    while (currentDir !== path.dirname(currentDir)) {
+        // until we reach the root directory
+        const nodeModulePath = path.join(
+            currentDir,
+            'node_modules',
+            packageName
+        );
 
-const fileUpdates: Array<FileModelUpdate> = [];
+        if (fs.existsSync(nodeModulePath)) {
+            // Look for the package.json file
+            const packageJsonPath = path.join(nodeModulePath, 'package.json');
 
-watcher
-    .on('add', (filePath: string) => {
-        const language = getFileLanguage(filePath);
-
-        fileUpdates.push({
-            action: 'created',
-            path: filePath,
-            language: language,
-            content: fs.readFileSync(filePath, 'utf-8'),
-            npmPackageFile: filePath.includes('node_modules'),
-        });
-
-        sendUpdatesIfNecessary();
-    })
-    .on('change', (filePath: string) => {
-        const language = getFileLanguage(filePath);
-
-        fileUpdates.push({
-            action: 'updated',
-            path: filePath,
-            language: language,
-            content: fs.readFileSync(filePath, 'utf-8'),
-            npmPackageFile: filePath.includes('node_modules'),
-        });
-        sendUpdatesIfNecessary();
-    })
-    .on('unlink', (filePath: string) => {
-        const language = getFileLanguage(filePath);
-
-        fileUpdates.push({
-            action: 'deleted',
-            path: filePath,
-            language: language,
-            npmPackageFile: filePath.includes('node_modules'),
-        });
-
-        sendUpdatesIfNecessary();
-    });
-
-const sendUpdatesIfNecessary = () => {
-    if (!timerId && fileUpdates.length > 0) {
-        timerId = setInterval(() => {
-            const updatesToSend = fileUpdates.splice(0, 10);
-
-            sendUpdates(updatesToSend);
-
-            if (fileUpdates.length === 0 && timerId) {
-                clearInterval(timerId);
-
-                timerId = null;
+            if (!fs.existsSync(packageJsonPath)) {
+                // If package.json does not exist, fallback to index.d.ts
+                const fallbackTypingsPath = path.join(
+                    nodeModulePath,
+                    'index.d.ts'
+                );
+                return fs.existsSync(fallbackTypingsPath)
+                    ? fallbackTypingsPath
+                    : null;
             }
-        }, 100);
-    }
-};
 
-const sendUpdates = (updates: Array<FileModelUpdate>) => {
-    console.log(JSON.stringify(updates));
-};
+            // Read package.json and get typings field
+            const packageJsonContent = fs.readFileSync(packageJsonPath, 'utf8');
+            const packageJson = JSON.parse(packageJsonContent);
+            const typingsField = packageJson.typings || packageJson.types;
 
-const getFileLanguage = (filePath: string): FileLanguage => {
-    const ext = path.extname(filePath);
-    switch (ext) {
-        case '.ts':
-            return 'typescript';
-        case '.js':
-            return 'javascript';
-        case '.json':
-            return 'json';
-        default:
-            throw new Error('Unsupported file extension: ' + ext);
+            if (!typingsField) {
+                // If no typings field, fallback to index.d.ts
+                const fallbackTypingsPath = path.join(
+                    nodeModulePath,
+                    'index.d.ts'
+                );
+                return fs.existsSync(fallbackTypingsPath)
+                    ? fallbackTypingsPath
+                    : null;
+            }
+
+            const typingsPath = path.join(nodeModulePath, typingsField);
+
+            return fs.existsSync(typingsPath) ? typingsPath : null;
+        }
+
+        currentDir = path.dirname(currentDir);
     }
-};
+
+    return null;
+}
+
+getTypingsPath(process.argv[2], process.argv[3])
+    .then((typingsPath) => console.log(typingsPath ?? 'Error'))
+    .catch((error) => console.log('Error'));

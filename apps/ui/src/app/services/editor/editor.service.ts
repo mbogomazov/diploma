@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, EMPTY, catchError } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 import { editorsOptions } from '../../components/editor/editor.model';
-import { WebcontainersService } from '../webcontainers/webcontainers.service';
 
 @Injectable({
     providedIn: 'root',
