@@ -178,4 +178,8 @@ export class TreeViewComponent implements OnInit, AfterViewInit {
             )
             .subscribe();
     }
+
+    rename() {}
+
+    delete() {}
 }

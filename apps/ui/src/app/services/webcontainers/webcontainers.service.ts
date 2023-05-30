@@ -11,6 +11,7 @@ import {
     forkJoin,
     map,
     mergeMap,
+    skip,
     switchMap,
     take,
     tap,
@@ -24,8 +25,6 @@ import { DirectoryNode, SearchResultsByFile } from '@online-editor/types';
     providedIn: 'root',
 })
 export class WebcontainersService {
-    static userSystemFolderPath = '/home/httplocalhost4200-mobu/';
-
     private webcontainerInstance!: WebContainer;
 
     private readonly helperScriptsfileNames = [
@@ -52,6 +51,8 @@ export class WebcontainersService {
 
     readonly searchFileContentResult$ =
         this.searchFileContentResult.asObservable();
+
+    readonly containerAppUrl$ = this.containerAppUrl.asObservable();
 
     constructor(private readonly http: HttpClient) {}
 
@@ -100,12 +101,9 @@ export class WebcontainersService {
                 });
 
                 this.webcontainerInstance?.on('error', (error) => {
-                    console.log(error.message);
-
                     return throwError(() => new Error(error.message));
                 });
-            }),
-            switchMap(() => this.containerAppUrl)
+            })
         );
     }
 
@@ -115,7 +113,7 @@ export class WebcontainersService {
         ).pipe(
             take(1),
             catchError((error) => {
-                console.log(error.message);
+                console.error(error.message);
 
                 return throwError(() => new Error(error.message));
             })
@@ -191,8 +189,6 @@ export class WebcontainersService {
                     new WritableStream({
                         write: (data) => {
                             try {
-                                console.log('Watch file changes');
-
                                 this.fileSystemChanges.next(JSON.parse(data));
                             } catch (error) {
                                 console.error(error);
@@ -205,26 +201,26 @@ export class WebcontainersService {
         );
     }
 
-    getNpmPackagePath(filepath: string, npmpackage: string) {
+    getNpmPackagePaths(filepath: string, npmPackagesPathsString: string) {
         return defer(() =>
             this.webcontainerInstance.spawn('node', [
                 '../../usr/local/lib/.monaco-models-watcher',
                 filepath,
-                npmpackage,
+                npmPackagesPathsString,
             ])
         ).pipe(
             tap((shellProcess) => {
                 shellProcess.output.pipeTo(
                     new WritableStream({
                         write: (data) => {
-                            console.log(data);
-
                             this.monacoModelsChanges.next(data);
                         },
                     })
                 );
             }),
-            switchMap(() => this.monacoModelsChanges.asObservable())
+            switchMap(() =>
+                this.monacoModelsChanges.asObservable().pipe(skip(1))
+            )
         );
     }
 

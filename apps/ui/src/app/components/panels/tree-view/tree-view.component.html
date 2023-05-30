@@ -21,6 +21,32 @@
             (activate)="onActivate($event)"
             [options]="options"
             [nodes]="(nodes$ | async) ?? []"
-        ></tree-root>
+        >
+            <ng-template #treeNodeTemplate let-node let-index="index">
+                <div class="node-container">
+                    <span>{{ node.data.name }}</span>
+
+                    <div class="btns-container">
+                        <button
+                            nbButton
+                            ghost
+                            class="node-icon-btn"
+                            (click)="rename()"
+                        >
+                            <nb-icon icon="edit-outline"></nb-icon>
+                        </button>
+
+                        <button
+                            nbButton
+                            ghost
+                            class="node-icon-btn"
+                            (click)="delete()"
+                        >
+                            <nb-icon icon="trash-outline"></nb-icon>
+                        </button>
+                    </div>
+                </div>
+            </ng-template>
+        </tree-root>
     </nb-card-body>
 </nb-card>
