@@ -1,6 +1,5 @@
 import {
     AfterContentInit,
-    AfterViewInit,
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
@@ -11,11 +10,11 @@ import {
 import { FormControl, FormGroup } from '@angular/forms';
 import {
     BehaviorSubject,
+    EMPTY,
     debounceTime,
     filter,
     map,
     mergeMap,
-    tap,
 } from 'rxjs';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import { SearchResult, SearchResultsByFile } from '@online-editor/types';
@@ -52,18 +51,24 @@ export class SearchPanelComponent implements OnInit, AfterContentInit {
 
     form = new FormGroup({
         search: new FormControl(),
-        replace: new FormControl(),
     });
 
     ngOnInit() {
         this.form.controls.search.valueChanges
             .pipe(
-                filter((value): value is string => !!value),
+                filter((value): value is string => value !== null),
                 debounceTime(1000),
-                tap(() => this.loading.next(true)),
-                mergeMap((searchingFileContent) =>
-                    this.editorFacade.searchFileContent(searchingFileContent)
-                ),
+                mergeMap((searchingFileContent) => {
+                    if (!searchingFileContent) {
+                        return EMPTY;
+                    }
+
+                    this.loading.next(true);
+
+                    return this.editorFacade.searchFileContent(
+                        searchingFileContent
+                    );
+                }),
                 untilDestroyed(this)
             )
             .subscribe();

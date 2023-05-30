@@ -34,13 +34,13 @@
                                 "
                                 class="item-content"
                             >
-                                {{ lineResult.content[0] }}
+                                {{ lineResult.content[0].trim() }}
 
                                 <span class="highlight">
-                                    {{ lineResult.content[1] }}</span
+                                    {{ lineResult.content[1].trim() }}</span
                                 >
 
-                                {{ lineResult.content[2] }}
+                                {{ lineResult.content[2].trim() }}
                             </div>
                         </nb-list-item>
                     </nb-list>
@@ -49,7 +49,10 @@
         </nb-accordion>
 
         <ng-template #noResults>
-            <p *ngIf="form.controls.search.value" class="no-results">
+            <p
+                *ngIf="(loading | async) !== true && form.controls.search.value"
+                class="no-results"
+            >
                 No results found
             </p>
         </ng-template>

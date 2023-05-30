@@ -1,10 +1,14 @@
 import { Injectable } from '@angular/core';
 import { DBConfig, NgxIndexedDBService } from 'ngx-indexed-db';
-import { EMPTY, Observable, defer, from } from 'rxjs';
-import { switchMap, mergeMap, map } from 'rxjs/operators';
+import { EMPTY, Observable, combineLatest, defer, from, of } from 'rxjs';
+import { switchMap, mergeMap, map, tap, finalize } from 'rxjs/operators';
 import { WebcontainersService } from '../webcontainers/webcontainers.service';
 import { DirectoryNode, FileNode } from '@online-editor/types';
 import * as JSZip from 'jszip';
+import { v4 as uuidv4 } from 'uuid';
+
+const directoriesFilename = 'directories.json';
+const filesFilename = 'files.json';
 
 export const fileDbConfig: DBConfig = {
     name: 'FileDb',
@@ -36,10 +40,20 @@ const fileSystemDirectoriesStoreName = 'fileSystemDirectoriesStoreName';
     providedIn: 'root',
 })
 export class FileStorageService {
+    private dfsWorker!: Worker;
+
     constructor(
         private readonly dbService: NgxIndexedDBService,
         private readonly webcontainersService: WebcontainersService
-    ) {}
+    ) {
+        if (typeof Worker !== 'undefined') {
+            this.dfsWorker = new Worker(
+                new URL('../../workers/dfs.worker.ts', import.meta.url)
+            );
+        } else {
+            console.warn('Web Workers are not supported in this environment.');
+        }
+    }
 
     addOrUpdateFile(file: FileStorageNode): Observable<FileStorageNode> {
         return this.dbService.getByKey('files', file.path).pipe(
@@ -110,16 +124,12 @@ export class FileStorageService {
         return fileSystemDirectoriesStoreName in localStorage;
     }
 
-    restoreProject() {
-        const directories = this.getDirectoriesStructure();
-
-        if (!directories) {
-            return EMPTY;
-        }
-
+    restoreProject(
+        directories: Array<DirectoryNode>,
+        files: Array<{ path: string; content: string }>
+    ) {
         return this.restoreDirectories(directories).pipe(
-            mergeMap(() => this.getAllFiles()),
-            mergeMap((files) => from(files)),
+            mergeMap(() => from(files)),
             mergeMap(({ path, content }) =>
                 this.webcontainersService.writeFile(path, content)
             )
@@ -136,12 +146,43 @@ export class FileStorageService {
             mergeMap(([directories, files]) => {
                 const zip = new JSZip();
 
-                zip.file('directories.json', directories);
-                zip.file('files.json', files);
+                zip.file(directoriesFilename, directories);
+                zip.file(filesFilename, files);
 
                 return defer(() => zip.generateAsync({ type: 'blob' }));
             })
         );
+    }
+
+    unzipDownloadedProject(zipFile: Blob) {
+        return defer(() => new JSZip().loadAsync(zipFile)).pipe(
+            mergeMap((zipData) => {
+                const directoriesZip = zipData.file(directoriesFilename);
+                const filesZip = zipData.file(filesFilename);
+
+                if (!directoriesZip || !filesZip) {
+                    return EMPTY;
+                }
+
+                return combineLatest([
+                    directoriesZip.async('string'),
+                    filesZip.async('string'),
+                ]);
+            }),
+            mergeMap(([directories, files]) => {
+                const parsedDirectories: Array<DirectoryNode> =
+                    JSON.parse(directories);
+
+                const parsedFiles: Array<{ path: string; content: string }> =
+                    JSON.parse(files);
+
+                return this.restoreProject(parsedDirectories, parsedFiles);
+            })
+        );
+    }
+
+    generateUniqueProjectFileName() {
+        return uuidv4();
     }
 
     private getDirectoriesOnly(node: DirectoryNode): DirectoryNode {
@@ -157,34 +198,42 @@ export class FileStorageService {
     }
 
     private restoreDirectories(directories: Array<DirectoryNode>) {
-        const flattenDirectories = this.getAllDirectories(directories);
-
-        return from(flattenDirectories).pipe(
+        return this.getAllDirectories(directories).pipe(
+            mergeMap((directories) => from(directories)),
             mergeMap(({ path }) => this.webcontainersService.mkDir(path))
         );
     }
 
-    private getAllDirectories(
-        directories: Array<DirectoryNode>
-    ): DirectoryNode[] {
-        const allDirectories: Array<DirectoryNode> = [];
+    private getAllDirectories(directories: Array<DirectoryNode>) {
+        let allDirectories: Array<DirectoryNode> = [];
 
-        for (const directory of directories) {
-            this.dfs(allDirectories, directory);
-        }
-
-        return allDirectories;
+        return of(...directories).pipe(
+            mergeMap((directory) => this.dfs(allDirectories, directory)),
+            tap((newAllDirectories) => {
+                allDirectories = newAllDirectories;
+            }),
+            finalize(() => allDirectories)
+        );
     }
 
     private dfs(
         directories: Array<DirectoryNode>,
         curDirectory: DirectoryNode
     ) {
-        directories.push(curDirectory);
+        return defer<Promise<Array<DirectoryNode>>>(
+            () =>
+                new Promise((resolve, reject) => {
+                    this.dfsWorker.onmessage = ({ data }) => {
+                        resolve(data);
+                    };
 
-        for (const child of curDirectory.children) {
-            this.dfs(directories, child as DirectoryNode);
-        }
+                    this.dfsWorker.onerror = (error) => {
+                        reject(error);
+                    };
+
+                    this.dfsWorker.postMessage({ directories, curDirectory });
+                })
+        );
     }
 
     private getBlob(data: any) {

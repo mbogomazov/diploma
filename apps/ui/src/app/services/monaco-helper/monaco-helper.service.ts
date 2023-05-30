@@ -4,14 +4,16 @@ import {
     EMPTY,
     Observable,
     catchError,
-    combineLatest,
     defer,
     filter,
     from,
     map,
     mergeMap,
     of,
+    switchMap,
+    take,
     tap,
+    zip,
 } from 'rxjs';
 import { editor, languages } from 'monaco-editor';
 
@@ -19,6 +21,7 @@ import { MonacoAutocompleteCodeAction } from './monaco-helper.consts';
 import { EditorService } from '../editor/editor.service';
 import { languageTypeByExtensionMap } from '../../helpers/models';
 import { WebcontainersService } from '../webcontainers/webcontainers.service';
+import { TypingsPathsType } from '@online-editor/types';
 
 declare const monaco: typeof import('monaco-editor');
 
@@ -51,7 +54,7 @@ export class MonacoHelperService {
         }
     }
 
-    setupMonacoHelpers(editorInstance: any) {
+    setupMonacoHelpers(editorInstance: editor.IStandaloneCodeEditor) {
         this.setupOpenFileByImportClick(editorInstance);
 
         this.initMonacoOptions();
@@ -98,28 +101,24 @@ export class MonacoHelperService {
         name: string,
         path: string,
         fileData: string,
-        editorInstance: any,
+        editorInstance: editor.IStandaloneCodeEditor,
         lineNumber?: number
     ) {
         this.openFile(name, path, fileData, editorInstance);
+
         if (['js', 'jsx', 'ts', 'tsx'].includes(this.getExtension(path))) {
             return this.parseImports(fileData, name).pipe(
                 mergeMap(({ npmImports, localImports }) =>
-                    combineLatest([
-                        from(localImports).pipe(
-                            mergeMap((localFilePath) =>
-                                this.resolveLocalFileImport(path, localFilePath)
-                            )
-                        ),
-                        from(npmImports).pipe(
-                            mergeMap((npmPackageName) =>
-                                this.resolveNpmLibraryImport(
-                                    path,
-                                    npmPackageName
-                                )
-                            )
-                        ),
-                    ])
+                    this.resolveNpmLibraryImports(path, npmImports).pipe(
+                        map(() => localImports)
+                    )
+                ),
+                mergeMap((localImports) =>
+                    this.resolveLocalFileImports(
+                        path,
+                        localImports,
+                        editorInstance
+                    )
                 )
             );
         }
@@ -139,8 +138,8 @@ export class MonacoHelperService {
         return of(null);
     }
 
-    formatDocument(editorInstance: any) {
-        editorInstance.getAction('editor.action.formatDocument').run();
+    formatDocument(editorInstance: editor.IStandaloneCodeEditor) {
+        editorInstance.getAction('editor.action.formatDocument')!.run();
     }
 
     getLanguageByFilePath(filePath?: string) {
@@ -160,7 +159,7 @@ export class MonacoHelperService {
     pasteAutocompleteResultToEditor(
         result: string,
         lineNumber: number,
-        editorInstance: any
+        editorInstance: editor.IStandaloneCodeEditor
     ) {
         const range = new monaco.Range(lineNumber, 1, lineNumber, 1);
 
@@ -175,7 +174,11 @@ export class MonacoHelperService {
         editorInstance.executeEdits('my-source', edits);
     }
 
-    updateModel(filePath: string, fileData: string) {
+    updateModel(
+        filePath: string,
+        fileData: string,
+        editorInstance: editor.IStandaloneCodeEditor
+    ) {
         const model = this.getMonacoModel(filePath);
 
         if (!model) {
@@ -188,14 +191,32 @@ export class MonacoHelperService {
             return;
         }
 
-        model.setValue(fileData);
+        const oldFullModelRange = model.getFullModelRange();
+
+        editorInstance.pushUndoStop();
+
+        model.pushEditOperations(
+            [],
+            [{ range: oldFullModelRange, text: fileData }],
+            () => null
+        );
+
+        editorInstance.pushUndoStop();
+
+        this.restoreFileState(filePath, editorInstance);
     }
 
-    updateFileState(filePath: string, editorInstance: any) {
-        this.editorStates.set(filePath, editorInstance.saveViewState());
+    updateFileState(
+        filePath: string,
+        editorInstance: editor.IStandaloneCodeEditor
+    ) {
+        this.editorStates.set(filePath, editorInstance.saveViewState()!);
     }
 
-    restoreFileState(filePath: string, editorInstance: any) {
+    restoreFileState(
+        filePath: string,
+        editorInstance: editor.IStandaloneCodeEditor
+    ) {
         const editorState = this.editorStates.get(filePath);
 
         if (!editorState) {
@@ -231,7 +252,7 @@ export class MonacoHelperService {
         name: string,
         path: string,
         fileData: string,
-        editorInstance: any
+        editorInstance: editor.IStandaloneCodeEditor
     ) {
         const extension = this.getExtension(name);
 
@@ -285,13 +306,13 @@ export class MonacoHelperService {
         );
 
         monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
-            target: monaco.languages.typescript.ScriptTarget.ES2020,
+            target: monaco.languages.typescript.ScriptTarget.ES2015,
             allowNonTsExtensions: true,
             moduleResolution:
                 monaco.languages.typescript.ModuleResolutionKind.NodeJs,
             module: monaco.languages.typescript.ModuleKind.CommonJS,
             noEmit: true,
-            // typeRoots: ['node_modules/@types'],
+            typeRoots: ['node_modules'],
         });
     }
 
@@ -312,7 +333,6 @@ export class MonacoHelperService {
 
         const openEditorBase = editorService.openCodeEditor.bind(editorService);
 
-        // TODO: refactor it
         editorService.openCodeEditor = async (
             input: { resource: any },
             source: any
@@ -320,9 +340,7 @@ export class MonacoHelperService {
             const result = await openEditorBase(input, source);
 
             if (result === null) {
-                console.log('Open definition for:', input.resource.path);
-
-                const model = this.getMonacoModel(input.resource);
+                const model = this.getMonacoModel(input.resource.path);
 
                 editorInstance.setModel(model);
             }
@@ -331,9 +349,22 @@ export class MonacoHelperService {
         };
     }
 
+    private resolveLocalFileImports(
+        path: string,
+        localFileImports: Array<string>,
+        editorInstance: editor.IStandaloneCodeEditor
+    ) {
+        return from(localFileImports).pipe(
+            mergeMap((localFilePath) =>
+                this.resolveLocalFileImport(path, localFilePath, editorInstance)
+            )
+        );
+    }
+
     private resolveLocalFileImport(
         currentFilePath: string,
-        localImportingFilePath: string
+        localImportingFilePath: string,
+        editorInstance: editor.IStandaloneCodeEditor
     ) {
         const baseDir = currentFilePath.substring(
             0,
@@ -360,31 +391,71 @@ export class MonacoHelperService {
             .readFile(absoluteImportingFilePath)
             .pipe(
                 tap((fileData) => {
-                    this.updateModel(absoluteImportingFilePath, fileData);
+                    if (!editorInstance) {
+                        return;
+                    }
+
+                    this.updateModel(
+                        absoluteImportingFilePath,
+                        fileData,
+                        editorInstance
+                    );
                 }),
                 catchError(() => EMPTY)
             );
     }
 
-    private resolveNpmLibraryImport(filepath: string, npmPackageName: string) {
+    private resolveNpmLibraryImports(
+        filepath: string,
+        npmPackageNames: Array<string>
+    ) {
         // call webcontainers script to get npm package path
         // after that generate path to index.d.ts and try to read it
         // if success add extraLib to monaco
+
         return this.webcontainersService
-            .getNpmPackagePath(filepath, npmPackageName)
+            .getNpmPackagePaths(filepath, npmPackageNames.join(','))
             .pipe(
                 filter(
-                    (npmPackagePath): npmPackagePath is string =>
-                        !!npmPackagePath && npmPackagePath !== 'Error'
+                    (
+                        npmPackagesPathsString
+                    ): npmPackagesPathsString is string =>
+                        !!npmPackagesPathsString &&
+                        npmPackagesPathsString !== 'Error\r\n'
                 ),
-                mergeMap((path) =>
-                    this.webcontainersService.readFile(path.trim())
+                take(1),
+                map(
+                    (npmPackagesPathsString) =>
+                        JSON.parse(npmPackagesPathsString) as TypingsPathsType
                 ),
-                tap((fileData) => {
-                    this.addExtraLib(fileData, npmPackageName);
-                }),
+                mergeMap((typingNamePaths) =>
+                    from(typingNamePaths).pipe(
+                        filter(
+                            (
+                                typingNamePath
+                            ): typingNamePath is {
+                                packageName: string;
+                                packagePath: string;
+                            } => !!typingNamePath.packagePath
+                        ),
+                        switchMap(({ packageName, packagePath }) =>
+                            this.webcontainersService
+                                .readFile(packagePath.trim())
+                                .pipe(
+                                    map((fileData) => ({
+                                        fileData,
+                                        packageName,
+                                    }))
+                                )
+                        ),
+                        tap(({ fileData, packageName }) => {
+                            this.addExtraLib(fileData, packageName);
+                        })
+                    )
+                ),
                 catchError((error) => {
-                    console.log(error);
+                    console.error(error);
+
                     return EMPTY;
                 })
             );
