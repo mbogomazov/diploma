@@ -1,15 +1,24 @@
-from transformers import AutoModelForCausalLM, AutoTokenizer
-# import torch
-import redis
 import time
+import redis
+from transformers import AutoTokenizer, T5ForConditionalGeneration
+import torch
+print('0')
 
-checkpoint = "bigcode/starcoder"
-device = 'cpu'  # for GPU usage or "cpu" for CPU usage
 
-tokenizer = AutoTokenizer.from_pretrained(checkpoint)
-model = AutoModelForCausalLM.from_pretrained(checkpoint).to(device)
+print('1')
 
-redis_client = redis.Redis(host='localhost', port=6379, db=0)
+device = torch.device('cuda:0') if torch.cuda.is_available() else None
+
+print('2')
+
+model = T5ForConditionalGeneration.from_pretrained(
+    'mishasadhaker/codet5_large_typescript').to(device)
+tokenizer = AutoTokenizer.from_pretrained(
+    'mishasadhaker/codet5_large_typescript')
+
+print('Connecting to redis')
+
+redis_client = redis.Redis(host='redis', port=6379, db=0)
 
 print('Waiting to tasks...')
 
@@ -20,21 +29,15 @@ while True:
         task = redis_client.hgetall(task_id)
         prompt = task[b'prompt'].decode('utf-8')
 
-        print(f'prompt: {prompt}')
+        input_ids = tokenizer.encode(prompt, return_tensors='pt').to(device)
 
-        inputs = tokenizer.encode(
-            "def print_hello_world():", return_tensors="pt").to(device)
+        with torch.no_grad():
+            output_ids = model.generate(
+                input_ids, max_length=200, temperature=0.5, num_beams=5)
 
-        print(f'Generating...')
+        output = tokenizer.decode(output_ids[0], skip_special_tokens=True)
 
-        outputs = model.generate(inputs)
-
-        output_text = tokenizer.decode(outputs[0])
-
-        print(
-            f'Output: {output_text}')
-
-        redis_client.hset(task_id, 'result', output_text)
+        redis_client.hset(task_id, 'result', output)
         redis_client.hset(task_id, 'status', 'complete')
     else:
         time.sleep(1)

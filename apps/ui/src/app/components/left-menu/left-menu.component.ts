@@ -27,11 +27,6 @@ export class LeftMenuComponent {
             icon: 'search-outline',
             selected: false,
         },
-        {
-            panel: 'settings',
-            icon: 'settings-2-outline',
-            selected: false,
-        },
     ];
 
     selectPanel(panel: PanelsUnion) {

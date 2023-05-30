@@ -17,6 +17,7 @@
                 "inlineStyleLanguage": "scss",
                 "assets": [
                     "apps/ui/src/favicon.ico",
+                    "apps/ui/src/favicon",
                     "apps/ui/src/assets",
                     {
                         "glob": "**/*",
@@ -78,7 +79,7 @@
             "defaultConfiguration": "development",
             "options": {
                 "headers": {
-                    "Cross-Origin-Embedder-Policy": "credentialless",
+                    "Cross-Origin-Embedder-Policy": "require-corp",
                     "Cross-Origin-Opener-Policy": "same-origin"
                 },
                 "proxyConfig": "apps/ui/src/proxy.conf.json"

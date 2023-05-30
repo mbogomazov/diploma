@@ -1,0 +1,68 @@
+@import '../../themes/black.theme.scss';
+
+.layout {
+    height: 100vh;
+    display: block;
+
+    &-header,
+    &-header ::ng-deep nav {
+        height: 50px;
+    }
+
+    &-header ::ng-deep nav {
+        padding: 8px;
+    }
+}
+
+.container,
+.terminal-container,
+.editors-container,
+.preview-container {
+    width: 100%;
+}
+
+.loading-card {
+    width: 350px;
+    height: 350px;
+    margin: 0 auto;
+    text-align: center;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    padding: 0 !important;
+}
+
+.editors-container {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    height: 100%;
+}
+
+.preview-container {
+    height: 100%;
+    display: flex;
+}
+
+.terminal-split-area {
+    overflow-y: hidden !important;
+    max-height: 50vh;
+}
+
+.terminal-container {
+    // height: 100%;
+    // display: block;
+    width: 100%;
+}
+
+:host ::ng-deep {
+    .as-split-gutter {
+        background-color: #151a30 !important;
+    }
+}

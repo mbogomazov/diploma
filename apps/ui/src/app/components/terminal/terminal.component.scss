@@ -41,6 +41,23 @@
     min-width: 120px;
 }
 
+.list-item {
+    padding: 4px;
+    cursor: pointer;
+
+    &.active {
+        background-color: #303d63;
+    }
+
+    &-container {
+        padding: 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+    }
+}
+
 // terminal custom styles
 :host ::ng-deep {
     .xterm .xterm-viewport {

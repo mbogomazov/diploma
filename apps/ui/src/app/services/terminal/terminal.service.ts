@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { WebcontainersService } from '../webcontainers/webcontainers.service';
 import {
     BehaviorSubject,
+    NEVER,
     Subscription,
     defer,
     filter,
@@ -39,6 +40,7 @@ export class TerminalService {
     readonly inputTerminalPrompt = new BehaviorSubject<string | null>(null);
 
     readonly shellsAmount$ = this.shells.pipe(map((shells) => shells.length));
+    readonly currentShellIndex$ = this.currentShellIndex.asObservable();
 
     readonly outputTerminalPrompt$ = this.outputTerminalPrompt.asObservable();
 
@@ -78,8 +80,7 @@ export class TerminalService {
     removeShell(index: number) {
         const [{ key, process }] = this.shells.value.splice(index, 1);
 
-        return defer(() => process.exit).pipe(
-            take(1),
+        return defer(async () => process.kill).pipe(
             tap(() => {
                 this.shells.next(this.shells.value);
 
@@ -141,6 +142,10 @@ export class TerminalService {
     }
 
     getTerminalOutputHistory(index: number) {
+        if (!this.shells.value[index]) {
+            return '';
+        }
+
         const { key } = this.shells.value[index];
 
         const previousData: Array<string> | undefined =

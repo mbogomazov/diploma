@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
-import { RouterModule } from '@angular/router';
+import { RouteReuseStrategy, RouterModule } from '@angular/router';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -11,8 +11,7 @@ import { AngularSplitModule } from 'angular-split';
 import { MonacoEditorModule } from 'ngx-monaco-editor-emmet';
 
 import { AppComponent } from './components/app/app.component';
-import { appRoutes } from './app.routes';
-import { SafePipe } from './pipes/safe.pipe';
+import { appRoutes } from './routing/app.routes';
 import { PreviewComponent } from './components/preview/preview.component';
 import { EditorComponent } from './components/editor/editor.component';
 import { TerminalComponent } from './components/terminal/terminal.component';
@@ -41,11 +40,13 @@ import { fileDbConfig } from './services/files-storage/files-storage.service';
 import { RestoreProjectDialogComponent } from './components/dialogs/restore-project-dialog/restore-project-dialog.component';
 import { AddFileFolderComponent } from './components/dialogs/add-file-folder/add-file-folder.component';
 import { LeftMenuComponent } from './components/left-menu/left-menu.component';
+import { MainComponent } from './components/main/main.component';
+import { DownloadProjectFilesDialogComponent } from './components/dialogs/download-project-files/download-project-files-dialog.component';
+import { RestoreProjectFilesDialogComponent } from './components/dialogs/restore-project-files/restore-project-files-dialog.component';
 
 @NgModule({
     declarations: [
         AppComponent,
-        SafePipe,
         PreviewComponent,
         EditorComponent,
         TerminalComponent,
@@ -56,6 +57,9 @@ import { LeftMenuComponent } from './components/left-menu/left-menu.component';
         RestoreProjectDialogComponent,
         AddFileFolderComponent,
         LeftMenuComponent,
+        MainComponent,
+        DownloadProjectFilesDialogComponent,
+        RestoreProjectFilesDialogComponent,
     ],
     imports: [
         BrowserModule,
@@ -88,7 +92,6 @@ import { LeftMenuComponent } from './components/left-menu/left-menu.component';
         NbButtonModule,
         NbSpinnerModule,
     ],
-    providers: [],
     bootstrap: [AppComponent],
 })
 export class AppModule {}

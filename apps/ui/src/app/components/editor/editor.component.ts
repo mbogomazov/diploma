@@ -18,7 +18,6 @@ import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import { editor } from 'monaco-editor';
 
 import { EditorFacadeService } from '../../facades/editor/editor-facade.service';
-import { WebcontainersService } from '../../services/webcontainers/webcontainers.service';
 import { MonacoHelperService } from '../../services/monaco-helper/monaco-helper.service';
 import { MonacoAutocompleteCodeAction } from '../../services/monaco-helper/monaco-helper.consts';
 
@@ -49,7 +48,6 @@ export class EditorComponent implements OnInit {
 
     constructor(
         private readonly editorFacade: EditorFacadeService,
-        private readonly webcontainersService: WebcontainersService,
         private readonly monacoHelperService: MonacoHelperService,
         private readonly window: Window
     ) {}
@@ -58,11 +56,10 @@ export class EditorComponent implements OnInit {
         this.editorControl.valueChanges
             .pipe(
                 filter((value): value is string => !!value),
-                debounceTime(500),
                 distinctUntilChanged(),
+                debounceTime(500),
                 tap(() => this.editorFacade.updateFileState()),
                 mergeMap((value) => this.editorFacade.writeEditingFile(value)),
-                tap(() => this.editorFacade.restoreFileState()),
                 untilDestroyed(this)
             )
             .subscribe();
@@ -86,15 +83,9 @@ export class EditorComponent implements OnInit {
     onEditorInit(editorInstance: editor.IStandaloneCodeEditor) {
         this.editorFacade.monacoEditorInstance.next(editorInstance);
 
-        // this.webcontainersService.monacoModelsChanges$
-        //     .pipe(
-        //         filter((updates): updates is FileModelUpdate => !!updates),
-        //         tap((updates) =>
-        //             this.monacoHelperService.processModelsUpdate(updates)
-        //         ),
-        //         untilDestroyed(this)
-        //     )
-        //     .subscribe();
+        if (!this.editorFacade.monacoEditorInstance.value) {
+            return;
+        }
 
         this.monacoHelperService.setupMonacoHelpers(
             this.editorFacade.monacoEditorInstance.value
