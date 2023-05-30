@@ -40,4 +40,4 @@ Thumbs.db
 
 .angular
 apps/ui/src/app/services/supabase/supabase.config.ts
-transformers_cache
+transformers_cache/*
