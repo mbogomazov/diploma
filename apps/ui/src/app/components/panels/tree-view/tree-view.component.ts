@@ -137,7 +137,7 @@ export class TreeViewComponent implements OnInit, AfterViewInit {
                     )
                 ),
                 catchError((error) => {
-                    console.log(error);
+                    console.error(error);
 
                     return EMPTY;
                 }),
@@ -170,7 +170,7 @@ export class TreeViewComponent implements OnInit, AfterViewInit {
                     )
                 ),
                 catchError((error) => {
-                    console.log(error);
+                    console.error(error);
 
                     return EMPTY;
                 }),

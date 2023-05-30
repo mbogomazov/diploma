@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { EditorFacadeService } from '../../facades/editor/editor-facade.service';
+import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 
+@UntilDestroy()
 @Component({
     selector: 'online-editor-header',
     templateUrl: './header.component.html',
@@ -15,6 +17,6 @@ export class HeaderComponent {
     }
 
     share() {
-        this.editorFacade.shareProject();
+        this.editorFacade.shareProject().pipe(untilDestroyed(this)).subscribe();
     }
 }

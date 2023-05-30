@@ -1,62 +1,97 @@
 import * as path from 'path';
 import * as fs from 'fs';
+import { TypingsPathsType } from '@online-editor/types';
 
-async function getTypingsPath(
+async function getTypingsPaths(
     importingFilePath: string,
-    packageName: string
-): Promise<string | null> {
-    let currentDir = path.dirname(importingFilePath);
+    packageNames: Array<string>
+): Promise<string> {
+    const result: TypingsPathsType = [];
 
-    while (currentDir !== path.dirname(currentDir)) {
-        // until we reach the root directory
-        const nodeModulePath = path.join(
-            currentDir,
-            'node_modules',
-            packageName
-        );
+    for (const packageName of packageNames) {
+        let currentDir = path.dirname(importingFilePath);
 
-        if (fs.existsSync(nodeModulePath)) {
-            // Look for the package.json file
-            const packageJsonPath = path.join(nodeModulePath, 'package.json');
+        while (currentDir !== path.dirname(currentDir)) {
+            // until we reach the root directory
+            const nodeModulePath = path.join(
+                currentDir,
+                'node_modules',
+                packageName
+            );
 
-            if (!fs.existsSync(packageJsonPath)) {
-                // If package.json does not exist, fallback to index.d.ts
-                const fallbackTypingsPath = path.join(
+            if (fs.existsSync(nodeModulePath)) {
+                // Look for the package.json file
+                const packageJsonPath = path.join(
                     nodeModulePath,
-                    'index.d.ts'
+                    'package.json'
                 );
-                return fs.existsSync(fallbackTypingsPath)
-                    ? fallbackTypingsPath
-                    : null;
+
+                if (!fs.existsSync(packageJsonPath)) {
+                    // If package.json does not exist, fallback to index.d.ts
+                    const fallbackTypingsPath = path.join(
+                        nodeModulePath,
+                        'index.d.ts'
+                    );
+
+                    result.push({
+                        packageName,
+                        packagePath: fs.existsSync(fallbackTypingsPath)
+                            ? fallbackTypingsPath
+                            : null,
+                    });
+
+                    continue;
+                }
+
+                // Read package.json and get typings field
+                const packageJsonContent = fs.readFileSync(
+                    packageJsonPath,
+                    'utf8'
+                );
+                const packageJson = JSON.parse(packageJsonContent);
+                const typingsField = packageJson.typings || packageJson.types;
+
+                if (!typingsField) {
+                    // If no typings field, fallback to index.d.ts
+                    const fallbackTypingsPath = path.join(
+                        nodeModulePath,
+                        'index.d.ts'
+                    );
+
+                    result.push({
+                        packageName,
+                        packagePath: fs.existsSync(fallbackTypingsPath)
+                            ? fallbackTypingsPath
+                            : null,
+                    });
+
+                    continue;
+                }
+
+                const typingsPath = path.join(nodeModulePath, typingsField);
+
+                result.push({
+                    packageName,
+                    packagePath: fs.existsSync(typingsPath)
+                        ? typingsPath
+                        : null,
+                });
+
+                continue;
             }
 
-            // Read package.json and get typings field
-            const packageJsonContent = fs.readFileSync(packageJsonPath, 'utf8');
-            const packageJson = JSON.parse(packageJsonContent);
-            const typingsField = packageJson.typings || packageJson.types;
-
-            if (!typingsField) {
-                // If no typings field, fallback to index.d.ts
-                const fallbackTypingsPath = path.join(
-                    nodeModulePath,
-                    'index.d.ts'
-                );
-                return fs.existsSync(fallbackTypingsPath)
-                    ? fallbackTypingsPath
-                    : null;
-            }
-
-            const typingsPath = path.join(nodeModulePath, typingsField);
-
-            return fs.existsSync(typingsPath) ? typingsPath : null;
+            currentDir = path.dirname(currentDir);
         }
 
-        currentDir = path.dirname(currentDir);
+        result.push({
+            packageName,
+            packagePath: null,
+        });
     }
 
-    return null;
+    return JSON.stringify(result);
 }
 
-getTypingsPath(process.argv[2], process.argv[3])
-    .then((typingsPath) => console.log(typingsPath ?? 'Error'))
-    .catch((error) => console.log('Error'));
+getTypingsPaths(process.argv[2], process.argv[3].split(','))
+    .then((typingsPaths) => console.log(typingsPaths ?? 'Error'))
+    .catch(() => console.log('Error'));

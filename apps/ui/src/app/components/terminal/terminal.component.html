@@ -23,8 +23,20 @@
                 <nb-list-item
                     (click)="selectShell(shellIndex)"
                     *ngFor="let shellIndex of shellsIndexes$ | async"
+                    class="list-item"
+                    [class.active]="shellIndex === (currentShellIndex$ | async)"
                 >
-                    {{ shellIndex }}
+                    <div class="list-item-container">
+                        <nb-icon icon="npm-outline"></nb-icon> jsh
+                        {{ shellIndex + 1 }}
+                        <button
+                            nbButton
+                            ghost
+                            (click)="removeShell(shellIndex, $event)"
+                        >
+                            <nb-icon icon="close-outline"></nb-icon>
+                        </button>
+                    </div>
                 </nb-list-item>
             </nb-list>
         </nb-card>

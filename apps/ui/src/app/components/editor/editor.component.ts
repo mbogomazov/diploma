@@ -56,11 +56,10 @@ export class EditorComponent implements OnInit {
         this.editorControl.valueChanges
             .pipe(
                 filter((value): value is string => !!value),
-                debounceTime(500),
                 distinctUntilChanged(),
+                debounceTime(500),
                 tap(() => this.editorFacade.updateFileState()),
                 mergeMap((value) => this.editorFacade.writeEditingFile(value)),
-                tap(() => this.editorFacade.restoreFileState()),
                 untilDestroyed(this)
             )
             .subscribe();
@@ -83,6 +82,10 @@ export class EditorComponent implements OnInit {
 
     onEditorInit(editorInstance: editor.IStandaloneCodeEditor) {
         this.editorFacade.monacoEditorInstance.next(editorInstance);
+
+        if (!this.editorFacade.monacoEditorInstance.value) {
+            return;
+        }
 
         this.monacoHelperService.setupMonacoHelpers(
             this.editorFacade.monacoEditorInstance.value

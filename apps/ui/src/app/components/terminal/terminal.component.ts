@@ -5,7 +5,7 @@ import {
     ViewChild,
 } from '@angular/core';
 import { NgTerminal } from 'ng-terminal';
-import { combineLatest, filter, map, tap } from 'rxjs';
+import { combineLatest, filter, map, take, tap } from 'rxjs';
 
 import { TerminalService } from '../../services/terminal/terminal.service';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
@@ -20,15 +20,17 @@ import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 export class TerminalComponent implements AfterViewInit {
     @ViewChild('term', { static: false }) child!: NgTerminal;
 
-    constructor(private readonly terminalService: TerminalService) {}
-
     readonly shellsIndexes$ = this.terminalService.shellsAmount$.pipe(
         map((amount) => Array.from(Array(amount).keys()))
     );
 
+    readonly currentShellIndex$ = this.terminalService.currentShellIndex$;
+
     showTerminalPanel = this.terminalService.shellsAmount$.pipe(
         map((amount) => amount > 1)
     );
+
+    constructor(private readonly terminalService: TerminalService) {}
 
     ngAfterViewInit() {
         this.child.setXtermOptions({
@@ -57,6 +59,7 @@ export class TerminalComponent implements AfterViewInit {
             this.terminalService.shellsAmount$,
         ])
             .pipe(
+                take(1),
                 tap(([_, amount]) => {
                     this.selectShell(amount - 1);
                 }),
@@ -71,9 +74,18 @@ export class TerminalComponent implements AfterViewInit {
         this.child.write(this.terminalService.getTerminalOutputHistory(index));
 
         this.terminalService.selectShell(index);
-
-        console.log(this.child.underlying.textarea?.value);
     }
 
-    removeShell() {}
+    removeShell(index: number, event: MouseEvent) {
+        event.stopPropagation();
+
+        this.terminalService
+            .removeShell(index)
+            .pipe(
+                tap(() => {
+                    this.selectShell(index - 1 < 0 ? 0 : index - 1);
+                })
+            )
+            .subscribe();
+    }
 }

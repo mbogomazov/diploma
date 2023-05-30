@@ -2,6 +2,7 @@
     <nb-card-header
         ><nb-icon icon="browser-outline"></nb-icon>Preview</nb-card-header
     >
+
     <nb-card-body class="container-body">
         <nb-card class="preview-header-menu">
             <nb-card-body class="preview-header-menu-body">
@@ -14,16 +15,14 @@
                 <input class="preview-url" nbInput [formControl]="previewUrl" />
             </nb-card-body>
         </nb-card>
+
         <iframe
             #previewContent
             class="preview"
-            allow="geolocation; microphone; camera; payment; autoplay; serial; cross-origin-isolated"
+            allow="geolocation; microphone; camera; payment; autoplay; serial; cross-origin-isolated; accelerometer; ambient-light-sensor; encrypted-media; fullscreen; gyroscope; magnetometer; midi; picture-in-picture; sync-xhr; usb; vr; xr-spatial-tracking"
             frameborder="0"
-            (onLoad)="pushUrlToHistory()"
         ></iframe>
-        <div
-            [hidden]="showIframeHider === false"
-            class="hack-iframe-hider"
-        ></div>
+
+        <div [hidden]="!showIframeHider" class="hack-iframe-hider"></div>
     </nb-card-body>
 </nb-card>

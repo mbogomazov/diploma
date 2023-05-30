@@ -7,7 +7,7 @@ import {
     Renderer2,
     ViewChild,
 } from '@angular/core';
-import { BehaviorSubject, filter } from 'rxjs';
+import { filter } from 'rxjs';
 import { FormControl } from '@angular/forms';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import { EditorFacadeService } from '../../facades/editor/editor-facade.service';
@@ -25,10 +25,6 @@ export class PreviewComponent implements OnInit {
 
     @Input() showIframeHider = false;
 
-    webcontainerUrl$ = new BehaviorSubject<string | null>(null);
-
-    private readonly historyState = new BehaviorSubject<Array<string>>([]);
-
     constructor(
         private readonly editorFacade: EditorFacadeService,
         private readonly renderer: Renderer2
@@ -44,7 +40,6 @@ export class PreviewComponent implements OnInit {
             )
             .subscribe((url) => {
                 this.previewUrl.patchValue(url);
-                this.webcontainerUrl$.next(url);
             });
 
         this.previewUrl.valueChanges
@@ -65,34 +60,6 @@ export class PreviewComponent implements OnInit {
                     url
                 );
             });
-    }
-
-    pushUrlToHistory() {
-        if (!this.previewContentRef) {
-            return;
-        }
-
-        console.log(
-            this.previewContentRef.nativeElement.contentWindow.location.href
-        );
-
-        // this.historyState();
-    }
-
-    goHistoryBack() {
-        if (!this.previewContentRef) {
-            return;
-        }
-
-        this.previewContentRef.nativeElement.contentWindow.history.go(-1);
-    }
-
-    goHistoryForward() {
-        if (!this.previewContentRef) {
-            return;
-        }
-
-        this.previewContentRef.nativeElement.contentWindow.history.go(1);
     }
 
     reload() {
