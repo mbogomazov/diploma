@@ -2,21 +2,14 @@ import time
 import redis
 from transformers import AutoTokenizer, T5ForConditionalGeneration
 import torch
-print('0')
 
-
-print('1')
 
 device = torch.device('cuda:0') if torch.cuda.is_available() else None
-
-print('2')
 
 model = T5ForConditionalGeneration.from_pretrained(
     'mishasadhaker/codet5_large_typescript').to(device)
 tokenizer = AutoTokenizer.from_pretrained(
     'mishasadhaker/codet5_large_typescript')
-
-print('Connecting to redis')
 
 redis_client = redis.Redis(host='redis', port=6379, db=0)
 
