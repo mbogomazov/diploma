@@ -13,21 +13,12 @@ import {
 } from '@circlon/angular-tree-component/lib/defs/api';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 
-import { WebcontainersService } from '../../../services/webcontainers/webcontainers.service';
-import {
-    BehaviorSubject,
-    EMPTY,
-    catchError,
-    filter,
-    map,
-    mergeMap,
-    take,
-    tap,
-} from 'rxjs';
+import { BehaviorSubject, EMPTY, catchError, mergeMap, take } from 'rxjs';
 import { EditorFacadeService } from '../../../facades/editor/editor-facade.service';
 import { NbDialogService } from '@nebular/theme';
 import { AddFileFolderComponent } from '../../dialogs/add-file-folder/add-file-folder.component';
 import { DirectoryNode, FileNode } from '@online-editor/types';
+import { DeleteFileFolderComponent } from '../../dialogs/delete-file/delete-file-folder.component';
 
 @UntilDestroy()
 @Component({
@@ -36,7 +27,7 @@ import { DirectoryNode, FileNode } from '@online-editor/types';
     styleUrls: ['./tree-view.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TreeViewComponent implements OnInit, AfterViewInit {
+export class FileTreeViewComponent implements OnInit, AfterViewInit {
     @ViewChild('parentElem', { read: ElementRef })
     private parentTreeElem?: ElementRef;
 
@@ -61,7 +52,6 @@ export class TreeViewComponent implements OnInit, AfterViewInit {
 
     constructor(
         private readonly editorFacadeService: EditorFacadeService,
-        private readonly webcontainersService: WebcontainersService,
         private readonly dialogService: NbDialogService,
         private readonly changeDetectorRef: ChangeDetectorRef
     ) {}
@@ -69,13 +59,7 @@ export class TreeViewComponent implements OnInit, AfterViewInit {
     ngOnInit() {
         this.editorFacadeService
             .watchFileChanges()
-            .pipe(
-                filter((data): data is DirectoryNode => !!data),
-                tap((data) =>
-                    this.editorFacadeService.updateFileSystemStructure(data)
-                ),
-                untilDestroyed(this)
-            )
+            .pipe(untilDestroyed(this))
             .subscribe();
     }
 
@@ -113,28 +97,18 @@ export class TreeViewComponent implements OnInit, AfterViewInit {
     }
 
     addFile() {
-        this.dialogService
-            .open(AddFileFolderComponent, {
-                context: {
-                    type: 'file',
-                },
-            })
-            .onClose.pipe(
-                filter((fileName): fileName is string => !!fileName),
-                mergeMap((fileName) =>
-                    this.editorFacadeService.currentOpenedDirectoryPath$.pipe(
-                        take(1),
-                        map(
-                            (currentOpenedDirectoryPath) =>
-                                [fileName, currentOpenedDirectoryPath] as const
-                        )
-                    )
-                ),
-                mergeMap(([fileName, currentOpenedDirectoryPath]) =>
-                    this.webcontainersService.writeFile(
-                        `${currentOpenedDirectoryPath}/${fileName}`,
-                        ''
-                    )
+        this.editorFacadeService.currentOpenedDirectoryPath$
+            .pipe(
+                take(1),
+                mergeMap(
+                    (currentOpenedDirectoryPath) =>
+                        this.dialogService.open(AddFileFolderComponent, {
+                            context: {
+                                type: 'file',
+                                action: 'add',
+                                editingPath: currentOpenedDirectoryPath,
+                            },
+                        }).onClose
                 ),
                 catchError((error) => {
                     console.error(error);
@@ -147,27 +121,18 @@ export class TreeViewComponent implements OnInit, AfterViewInit {
     }
 
     addFolder() {
-        this.dialogService
-            .open(AddFileFolderComponent, {
-                context: {
-                    type: 'folder',
-                },
-            })
-            .onClose.pipe(
-                filter((folderName): folderName is string => !!folderName),
-                mergeMap((fileName) =>
-                    this.editorFacadeService.currentOpenedDirectoryPath$.pipe(
-                        take(1),
-                        map(
-                            (currentOpenedDirectoryPath) =>
-                                [fileName, currentOpenedDirectoryPath] as const
-                        )
-                    )
-                ),
-                mergeMap(([fileName, currentOpenedDirectoryPath]) =>
-                    this.webcontainersService.mkDir(
-                        `${currentOpenedDirectoryPath}/${fileName}`
-                    )
+        this.editorFacadeService.currentOpenedDirectoryPath$
+            .pipe(
+                take(1),
+                mergeMap(
+                    (currentOpenedDirectoryPath) =>
+                        this.dialogService.open(AddFileFolderComponent, {
+                            context: {
+                                type: 'folder',
+                                action: 'add',
+                                editingPath: currentOpenedDirectoryPath,
+                            },
+                        }).onClose
                 ),
                 catchError((error) => {
                     console.error(error);
@@ -179,7 +144,39 @@ export class TreeViewComponent implements OnInit, AfterViewInit {
             .subscribe();
     }
 
-    rename() {}
+    rename(data: FileNode | DirectoryNode) {
+        this.editorFacadeService.currentOpenedDirectoryPath$
+            .pipe(
+                take(1),
+                mergeMap(
+                    (currentOpenedDirectoryPath) =>
+                        this.dialogService.open(AddFileFolderComponent, {
+                            context: {
+                                type: 'file',
+                                action: 'rename',
+                                editingPath: currentOpenedDirectoryPath,
+                                editingName: data.name,
+                            },
+                        }).onClose
+                ),
+                catchError((error) => {
+                    console.error(error);
 
-    delete() {}
+                    return EMPTY;
+                }),
+                untilDestroyed(this)
+            )
+            .subscribe();
+    }
+
+    delete(data: FileNode | DirectoryNode) {
+        this.dialogService
+            .open(DeleteFileFolderComponent, {
+                context: {
+                    filePath: data.path,
+                },
+            })
+            .onClose.pipe(untilDestroyed(this))
+            .subscribe();
+    }
 }

@@ -1,6 +1,9 @@
 <nb-layout class="layout" [withScroll]="true">
     <nb-layout-header class="layout-header" *ngIf="(loading$ | async) !== true">
-        <online-editor-header></online-editor-header>
+        <online-editor-header
+            class="header-container"
+            (togglePreviewEvent)="togglePreview = !togglePreview"
+        ></online-editor-header>
     </nb-layout-header>
 
     <nb-layout-column *ngIf="!!(loading$ | async); else app">
@@ -36,7 +39,7 @@
                             class="editor-container"
                         ></online-editor-editor>
                     </as-split-area>
-                    <as-split-area [size]="35">
+                    <as-split-area [size]="35" [visible]="togglePreview">
                         <online-editor-preview
                             [showIframeHider]="showIframeHider"
                             class="preview-container"

@@ -24,7 +24,7 @@ module.exports = [{
         fsevents: "require('fsevents')",
     },
 }, {
-    entry: './src/search-replace-file-content.ts',
+    entry: './src/search-file-content.ts',
     target: 'node',
     mode: 'production',
     module: {
@@ -40,7 +40,7 @@ module.exports = [{
         extensions: ['.ts', '.js'],
     },
     output: {
-        filename: 'search-replace-file-content.js',
+        filename: 'search-file-content.js',
         path: path.resolve(__dirname, 'dist'),
     },
     externals: {

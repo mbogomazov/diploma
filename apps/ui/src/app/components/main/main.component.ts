@@ -22,6 +22,7 @@ export class MainComponent implements OnInit, OnDestroy {
     readonly loading$ = this.editorFacade.loading$;
 
     showIframeHider = false;
+    togglePreview = true;
 
     constructor(
         private readonly window: Window,

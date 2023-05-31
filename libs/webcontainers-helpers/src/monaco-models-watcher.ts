@@ -1,5 +1,5 @@
 import * as path from 'path';
-import * as fs from 'fs';
+import * as fs from 'fs/promises';
 import { TypingsPathsType } from '@online-editor/types';
 
 async function getTypingsPaths(
@@ -12,81 +12,68 @@ async function getTypingsPaths(
         let currentDir = path.dirname(importingFilePath);
 
         while (currentDir !== path.dirname(currentDir)) {
-            // until we reach the root directory
             const nodeModulePath = path.join(
                 currentDir,
                 'node_modules',
                 packageName
             );
 
-            if (fs.existsSync(nodeModulePath)) {
-                // Look for the package.json file
+            try {
+                await fs.access(nodeModulePath);
+
                 const packageJsonPath = path.join(
                     nodeModulePath,
                     'package.json'
                 );
 
-                if (!fs.existsSync(packageJsonPath)) {
-                    // If package.json does not exist, fallback to index.d.ts
-                    const fallbackTypingsPath = path.join(
-                        nodeModulePath,
-                        'index.d.ts'
+                let typingsPath;
+
+                try {
+                    const packageJsonContent = await fs.readFile(
+                        packageJsonPath,
+                        'utf8'
                     );
 
-                    result.push({
-                        packageName,
-                        packagePath: fs.existsSync(fallbackTypingsPath)
-                            ? fallbackTypingsPath
-                            : null,
-                    });
+                    const packageJson = JSON.parse(packageJsonContent);
+                    const typingsField =
+                        packageJson.typings || packageJson.types;
 
-                    continue;
+                    typingsPath = typingsField
+                        ? path.join(nodeModulePath, typingsField)
+                        : path.join(nodeModulePath, 'index.d.ts');
+
+                    await fs.access(typingsPath);
+                } catch (error) {
+                    // if package.json doesn't exist or no typings field, fallback to index.d.ts
+                    typingsPath = path.join(nodeModulePath, 'index.d.ts');
+
+                    try {
+                        await fs.access(typingsPath);
+                    } catch (error) {
+                        // if index.d.ts also doesn't exist
+                        typingsPath = null;
+                    }
                 }
-
-                // Read package.json and get typings field
-                const packageJsonContent = fs.readFileSync(
-                    packageJsonPath,
-                    'utf8'
-                );
-                const packageJson = JSON.parse(packageJsonContent);
-                const typingsField = packageJson.typings || packageJson.types;
-
-                if (!typingsField) {
-                    // If no typings field, fallback to index.d.ts
-                    const fallbackTypingsPath = path.join(
-                        nodeModulePath,
-                        'index.d.ts'
-                    );
-
-                    result.push({
-                        packageName,
-                        packagePath: fs.existsSync(fallbackTypingsPath)
-                            ? fallbackTypingsPath
-                            : null,
-                    });
-
-                    continue;
-                }
-
-                const typingsPath = path.join(nodeModulePath, typingsField);
 
                 result.push({
                     packageName,
-                    packagePath: fs.existsSync(typingsPath)
-                        ? typingsPath
-                        : null,
+                    packagePath: typingsPath,
                 });
 
+                break; // when typingsPath found, break the loop
+            } catch (error) {
+                // no such package in the current node_modules directory
+                currentDir = path.dirname(currentDir);
                 continue;
             }
-
-            currentDir = path.dirname(currentDir);
         }
 
-        result.push({
-            packageName,
-            packagePath: null,
-        });
+        if (!result.find((item) => item.packageName === packageName)) {
+            result.push({
+                packageName,
+                packagePath: null,
+            });
+        }
     }
 
     return JSON.stringify(result);
