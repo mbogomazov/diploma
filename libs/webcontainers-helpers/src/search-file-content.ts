@@ -5,7 +5,6 @@ import { SearchResult, SearchResultsByFile } from '@online-editor/types';
 
 async function searchReplace(
     searchText: string,
-    replaceText: string | null,
     context = 15
 ): Promise<SearchResultsByFile> {
     const files = glob.sync('**', {
@@ -39,7 +38,7 @@ async function searchReplace(
                         regex.lastIndex + context
                     );
 
-                    const centralTerm = replaceText || match[1];
+                    const centralTerm = match[1];
 
                     const splitContent = [
                         beforeContext,
@@ -69,12 +68,6 @@ async function searchReplace(
 
 const search = process.argv[2];
 
-let replace = null;
-
-if (process.argv.length === 4) {
-    replace = process.argv[3];
-}
-
-searchReplace(search, replace).then((results) => {
+searchReplace(search).then((results) => {
     console.log(JSON.stringify(results));
 });

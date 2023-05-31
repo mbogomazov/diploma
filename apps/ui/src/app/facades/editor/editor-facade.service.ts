@@ -4,6 +4,7 @@ import {
     BehaviorSubject,
     EMPTY,
     catchError,
+    filter,
     map,
     mergeMap,
     of,
@@ -12,11 +13,7 @@ import {
 } from 'rxjs';
 import { EditorService } from '../../services/editor/editor.service';
 import { TerminalService } from '../../services/terminal/terminal.service';
-import {
-    NbDialogService,
-    NbGlobalPhysicalPosition,
-    NbToastrService,
-} from '@nebular/theme';
+import { NbDialogService, NbToastrService } from '@nebular/theme';
 import { ErrorDialogComponent } from '../../components/dialogs/error/error-dialog.component';
 import { FileStorageService } from '../../services/files-storage/files-storage.service';
 import { RestoreProjectDialogComponent } from '../../components/dialogs/restore-project-dialog/restore-project-dialog.component';
@@ -28,8 +25,7 @@ import { MonacoAutocompleteCodeAction } from '../../services/monaco-helper/monac
 import { MonacoHelperService } from '../../services/monaco-helper/monaco-helper.service';
 import { SupabaseService } from '../../services/supabase/supabase.service';
 import { Router } from '@angular/router';
-import { DownloadProjectFilesDialogComponent } from '../../components/dialogs/download-project-files/download-project-files-dialog.component';
-import { RestoreProjectFilesDialogComponent } from '../../components/dialogs/restore-project-files/restore-project-files-dialog.component';
+import { LoadingPopupDialogComponent } from '../../components/dialogs/download-project-files/loading-popup-dialog.component';
 
 @Injectable({
     providedIn: 'root',
@@ -65,7 +61,6 @@ export class EditorFacadeService {
         private readonly editorService: EditorService,
         private readonly terminalService: TerminalService,
         private readonly dialogService: NbDialogService,
-        private readonly toastrService: NbToastrService,
         private readonly fileStorageService: FileStorageService,
         private readonly taskService: TaskService,
         private readonly monacoHelperService: MonacoHelperService,
@@ -84,10 +79,13 @@ export class EditorFacadeService {
                 }
 
                 const dialogRef = this.dialogService.open(
-                    DownloadProjectFilesDialogComponent,
+                    LoadingPopupDialogComponent,
                     {
                         closeOnBackdropClick: false,
                         closeOnEsc: false,
+                        context: {
+                            title: 'Downloading project files',
+                        },
                     }
                 );
 
@@ -116,7 +114,14 @@ export class EditorFacadeService {
                 }
 
                 const dialogRef = this.dialogService.open(
-                    RestoreProjectFilesDialogComponent
+                    LoadingPopupDialogComponent,
+                    {
+                        closeOnBackdropClick: false,
+                        closeOnEsc: false,
+                        context: {
+                            title: 'Restoring project files',
+                        },
+                    }
                 );
 
                 const directories =
@@ -151,7 +156,10 @@ export class EditorFacadeService {
     }
 
     watchFileChanges() {
-        return this.webcontainersService.watchFileChanges();
+        return this.webcontainersService.watchFileChanges().pipe(
+            filter((data): data is DirectoryNode => !!data),
+            tap((data) => this.updateFileSystemStructure(data))
+        );
     }
 
     updateFileSystemStructure(directoryNode: DirectoryNode) {
@@ -228,22 +236,22 @@ export class EditorFacadeService {
     }
 
     saveProjectLocally() {
-        this.toastrService.show('', 'Saving files in progress', {
-            position: NbGlobalPhysicalPosition.TOP_RIGHT,
-            status: 'info',
-            icon: 'save-outline',
-            hasIcon: true,
-            destroyByClick: true,
+        const dialogRef = this.dialogService.open(LoadingPopupDialogComponent, {
+            closeOnBackdropClick: false,
+            closeOnEsc: false,
+            context: {
+                title: 'Saving locally project files',
+            },
         });
 
         this.fileStorageService.addOrUpdateDirectoriesStructure(
             this.nodes.value
         );
 
-        this.fileStorageService
-            .clearFiles()
-            .pipe(tap(() => this.saveNodesToIndexedDb(this.nodes.value)))
-            .subscribe();
+        return this.fileStorageService.clearFiles().pipe(
+            tap(() => this.saveNodesToIndexedDb(this.nodes.value)),
+            tap(() => dialogRef.close())
+        );
     }
 
     getCodeAutocompletion({
@@ -297,6 +305,14 @@ export class EditorFacadeService {
     }
 
     shareProject() {
+        const dialogRef = this.dialogService.open(LoadingPopupDialogComponent, {
+            closeOnBackdropClick: false,
+            closeOnEsc: false,
+            context: {
+                title: 'Uploading files to cloud',
+            },
+        });
+
         const rootDirectories = this.nodes.value.filter(
             (node): node is DirectoryNode =>
                 node.name !== 'node_modules' && 'children' in node
@@ -315,6 +331,7 @@ export class EditorFacadeService {
                         .uploadFile(blob, `${fileName}.zip`)
                         .pipe(map(() => fileName))
                 ),
+                tap(() => dialogRef.close()),
                 mergeMap((fileName) => this.router.navigate([`/p/${fileName}`]))
             );
     }

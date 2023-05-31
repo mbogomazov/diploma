@@ -29,7 +29,7 @@ export class WebcontainersService {
 
     private readonly helperScriptsfileNames = [
         'chokidar',
-        'search-replace-file-content',
+        'search-file-content',
         'monaco-models-watcher',
     ];
 
@@ -81,7 +81,7 @@ export class WebcontainersService {
                                     contents: this.helperScriptsFileContents[0],
                                 },
                             },
-                            '.search-replace-file-content': {
+                            '.search-file-content': {
                                 file: {
                                     contents: this.helperScriptsFileContents[1],
                                 },
@@ -120,6 +120,14 @@ export class WebcontainersService {
         );
     }
 
+    mvFile(path: string, newPath: string) {
+        return this.readFile(path).pipe(
+            take(1),
+            mergeMap((data) => this.rm(path).pipe(map(() => data))),
+            mergeMap((data) => this.writeFile(newPath, data))
+        );
+    }
+
     readFile(path: string) {
         return defer(
             () => this.webcontainerInstance?.fs.readFile(path) ?? EMPTY
@@ -148,6 +156,16 @@ export class WebcontainersService {
         ).pipe(take(1));
     }
 
+    rm(path: string) {
+        return defer(
+            () =>
+                this.webcontainerInstance?.fs.rm(path, {
+                    recursive: true,
+                    force: true,
+                }) ?? EMPTY
+        ).pipe(take(1));
+    }
+
     startShell() {
         return defer(() => this.webcontainerInstance.spawn('jsh')).pipe(
             take(1)
@@ -157,7 +175,7 @@ export class WebcontainersService {
     searchFileContent(search: string) {
         return defer(() =>
             this.webcontainerInstance.spawn('node', [
-                '../../usr/local/lib/.search-replace-file-content',
+                '../../usr/local/lib/.search-file-content',
                 search,
             ])
         ).pipe(
