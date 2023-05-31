@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
-import { editorsOptions } from '../../components/editor/editor.model';
 
 @Injectable({
     providedIn: 'root',
@@ -25,22 +24,5 @@ export class EditorService {
 
     setFileData(name: string, data: string) {
         this.fileData.next(data);
-
-        this.setEmmetEditorOptions(name);
-    }
-
-    setEmmetEditorOptions(name: string) {
-        const extension = name.split('.').slice(-1).pop();
-
-        if (!extension) {
-            return;
-        }
-
-        const languageOptions = editorsOptions[extension];
-
-        this.options.next({
-            ...this.options.value,
-            useEmmet: languageOptions?.useEmmet ?? false,
-        });
     }
 }

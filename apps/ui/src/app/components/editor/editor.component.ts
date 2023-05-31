@@ -6,6 +6,7 @@ import {
 } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
 import {
+    BehaviorSubject,
     debounceTime,
     distinctUntilChanged,
     filter,
@@ -31,6 +32,8 @@ import { MonacoAutocompleteCodeAction } from '../../services/monaco-helper/monac
 })
 export class EditorComponent implements OnInit {
     @Input() showEditorHider = false;
+
+    readonly loading = new BehaviorSubject<boolean>(true);
 
     readonly form = new FormGroup({
         editor: new FormControl(),
@@ -81,6 +84,8 @@ export class EditorComponent implements OnInit {
     }
 
     onEditorInit(editorInstance: editor.IStandaloneCodeEditor) {
+        this.loading.next(false);
+
         this.editorFacade.monacoEditorInstance.next(editorInstance);
 
         if (!this.editorFacade.monacoEditorInstance.value) {

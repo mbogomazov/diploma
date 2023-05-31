@@ -1,7 +1,12 @@
 <div class="container">
     <as-split direction="horizontal" [gutterSize]="2" unit="percent">
         <as-split-area>
-            <nb-card class="editor-card-container">
+            <nb-card
+                class="editor-card-container"
+                [nbSpinner]="(loading | async) === true"
+                nbSpinnerSize="large"
+                nbSpinnerStatus="primary"
+            >
                 <nb-card-header class="editor-card-container-header">
                     <div class="left-items">
                         <nb-icon class="icon" icon="code-outline"></nb-icon>

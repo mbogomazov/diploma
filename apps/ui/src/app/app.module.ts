@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
-import { RouteReuseStrategy, RouterModule } from '@angular/router';
+import { RouterModule } from '@angular/router';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -8,14 +8,14 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { TreeModule } from '@circlon/angular-tree-component';
 import { NgTerminalModule } from 'ng-terminal';
 import { AngularSplitModule } from 'angular-split';
-import { MonacoEditorModule } from 'ngx-monaco-editor-emmet';
+import { MonacoEditorModule } from 'ngx-monaco-editor-v2';
 
 import { AppComponent } from './components/app/app.component';
 import { appRoutes } from './routing/app.routes';
 import { PreviewComponent } from './components/preview/preview.component';
 import { EditorComponent } from './components/editor/editor.component';
 import { TerminalComponent } from './components/terminal/terminal.component';
-import { TreeViewComponent } from './components/panels/tree-view/tree-view.component';
+import { FileTreeViewComponent } from './components/panels/tree-view/tree-view.component';
 import {
     NbAccordionModule,
     NbAlertModule,
@@ -41,8 +41,8 @@ import { RestoreProjectDialogComponent } from './components/dialogs/restore-proj
 import { AddFileFolderComponent } from './components/dialogs/add-file-folder/add-file-folder.component';
 import { LeftMenuComponent } from './components/left-menu/left-menu.component';
 import { MainComponent } from './components/main/main.component';
-import { DownloadProjectFilesDialogComponent } from './components/dialogs/download-project-files/download-project-files-dialog.component';
-import { RestoreProjectFilesDialogComponent } from './components/dialogs/restore-project-files/restore-project-files-dialog.component';
+import { LoadingPopupDialogComponent } from './components/dialogs/download-project-files/loading-popup-dialog.component';
+import { DeleteFileFolderComponent } from './components/dialogs/delete-file/delete-file-folder.component';
 
 @NgModule({
     declarations: [
@@ -50,7 +50,7 @@ import { RestoreProjectFilesDialogComponent } from './components/dialogs/restore
         PreviewComponent,
         EditorComponent,
         TerminalComponent,
-        TreeViewComponent,
+        FileTreeViewComponent,
         HeaderComponent,
         SearchPanelComponent,
         ErrorDialogComponent,
@@ -58,8 +58,8 @@ import { RestoreProjectFilesDialogComponent } from './components/dialogs/restore
         AddFileFolderComponent,
         LeftMenuComponent,
         MainComponent,
-        DownloadProjectFilesDialogComponent,
-        RestoreProjectFilesDialogComponent,
+        LoadingPopupDialogComponent,
+        DeleteFileFolderComponent,
     ],
     imports: [
         BrowserModule,

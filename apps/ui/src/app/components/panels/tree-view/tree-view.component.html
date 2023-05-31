@@ -28,10 +28,11 @@
 
                     <div class="btns-container">
                         <button
+                            *ngIf="node.data.children === undefined"
                             nbButton
                             ghost
                             class="node-icon-btn"
-                            (click)="rename()"
+                            (click)="rename(node.data)"
                         >
                             <nb-icon icon="edit-outline"></nb-icon>
                         </button>
@@ -40,7 +41,7 @@
                             nbButton
                             ghost
                             class="node-icon-btn"
-                            (click)="delete()"
+                            (click)="delete(node.data)"
                         >
                             <nb-icon icon="trash-outline"></nb-icon>
                         </button>

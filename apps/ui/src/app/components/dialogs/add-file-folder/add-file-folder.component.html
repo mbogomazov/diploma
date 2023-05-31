@@ -1,5 +1,5 @@
 <nb-card>
-    <nb-card-header>Add {{ type }}</nb-card-header>
+    <nb-card-header>{{ action }} {{ type }}</nb-card-header>
     <nb-card-body>
         <form (submit)="submit()">
             <input
@@ -8,9 +8,13 @@
                 [placeholder]="type + ' name'"
                 [formControl]="inputControl"
             />
+
+            <div *ngIf="!inputControl.valid" class="custom-error-message">
+                {{ errorMsg | async }}
+            </div>
         </form>
     </nb-card-body>
     <nb-card-footer class="card-footer">
-        <button nbButton status="info" (click)="submit()">Create</button>
+        <button nbButton status="info" (click)="submit()">Apply</button>
     </nb-card-footer>
 </nb-card>

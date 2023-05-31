@@ -1,17 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { FileTreeViewComponent } from './tree-view.component';
+import { DeleteFileComponent } from './delete-file-folder.component';
 
-describe('FileTreeViewComponent', () => {
-    let component: FileTreeViewComponent;
-    let fixture: ComponentFixture<FileTreeViewComponent>;
+describe('DeleteFileComponent', () => {
+    let component: DeleteFileComponent;
+    let fixture: ComponentFixture<DeleteFileComponent>;
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [FileTreeViewComponent],
+            declarations: [DeleteFileComponent],
         }).compileComponents();
 
-        fixture = TestBed.createComponent(FileTreeViewComponent);
+        fixture = TestBed.createComponent(DeleteFileComponent);
         component = fixture.componentInstance;
         fixture.detectChanges();
     });

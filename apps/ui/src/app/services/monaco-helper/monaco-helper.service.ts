@@ -13,9 +13,9 @@ import {
     switchMap,
     take,
     tap,
-    zip,
 } from 'rxjs';
 import { editor, languages } from 'monaco-editor';
+import { emmetHTML, emmetCSS, emmetJSX } from 'emmet-monaco-es';
 
 import { MonacoAutocompleteCodeAction } from './monaco-helper.consts';
 import { EditorService } from '../editor/editor.service';
@@ -60,6 +60,10 @@ export class MonacoHelperService {
         this.initMonacoOptions();
 
         this.addCodeAutocompleteAction();
+
+        emmetHTML(monaco);
+        emmetCSS(monaco, ['css', 'scss', 'less']);
+        emmetJSX(monaco, ['javascript', 'typescript', 'jsx', 'tsx']);
     }
 
     addCodeAutocompleteAction() {
