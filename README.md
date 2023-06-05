@@ -3,6 +3,8 @@
 
 ![Preview of editor](./preview.png)
 
+This project was created as part of the work on my diploma
+
 ## Features
 
 * Run any Node.js app directly inside your browser using WebContainers technology
